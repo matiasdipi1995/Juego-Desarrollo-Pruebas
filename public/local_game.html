@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Juego de Pelea: 1 vs 1 Local (Misma PC)</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/local-game.css">
+</head>
+<body>
+
+  <div class="game-container">
+        <img src="img/backgrounds/main_bg.jpeg" class="bg-back">
+
+    <!-- UI DE VIDA Y MANÁ -->
+    <div class="ui-layer" style="width: 100%; display: flex; justify-content: space-between; margin-bottom: 10px;">
+      <div style="width: 45%;">
+        <div class="player-label" style="color: #ff4444;" id="ui-warrior-name">Guerrero (P1)</div>
+        <div class="health-bar-container"><div id="warrior-hp" class="health-bar-fill" style="width: 100%;"></div></div>
+        <div class="mana-bar-container"><div id="warrior-mana" class="mana-bar-fill" style="width: 100%;"></div></div>
+      </div>
+      <div style="width: 45%;">
+        <div class="player-label" style="color: #4488ff; text-align: right;" id="ui-mage-name">Mago (P2)</div>
+        <div class="health-bar-container"><div id="mage-hp" class="health-bar-fill" style="width: 100%;"></div></div>
+        <div class="mana-bar-container"><div id="mage-mana" class="mana-bar-fill" style="width: 100%;"></div></div>
+      </div>
+    </div>
+
+    <!-- CANVAS DEL JUEGO -->
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+    <!-- GUÍA DE CONTROLES EN PANTALLA -->
+    <div class="controls-hint">
+      <div class="hint-col">
+        <b style="color: #ff4444;">P1 Guerrero:</b><br>
+        A/D: Moverse | W: Saltar | S: Defender<br>
+        Espacio: Ataque Básico | E (Mantener): Carga/Rayo
+      </div>
+      <div class="hint-col right">
+        <b style="color: #4488ff;">P2 Mago:</b><br>
+        Flechas: Moverse / Saltar / Defender<br>
+        Enter: Disparar | M / Shift Der: Dash Especial
+      </div>
+    </div>
+  </div>
+
+  <script src="js/local-game.js"></script>
+</body>
+</html>

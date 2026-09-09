@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seleccionar Dificultad</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/difficulty.css">
+</head>
+<body>
+
+  <div class="menu-card">
+    <h2 class="title">Selecciona la Dificultad</h2>
+
+    <div class="difficulty-options">
+      <button class="btn-diff easy" onclick="selectDifficulty('easy')">
+        <span>Fácil</span>
+        <small>Ideal para practicar ataques y combos.</small>
+      </button>
+
+      <button class="btn-diff medium" onclick="selectDifficulty('medium')">
+        <span>Moderado</span>
+        <small>La IA reacciona y se defiende activamente.</small>
+      </button>
+
+      <button class="btn-diff hard" onclick="selectDifficulty('hard')">
+        <span>Difícil</span>
+        <small>Reflejos rápidos, castigo de errores y uso óptimo de maná.</small>
+      </button>
+    </div>
+
+    <button class="btn-back" onclick="location.href='index.html'">Volver al Menú</button>
+  </div>
+
+  <script src="js/difficulty.js"></script>
+</body>
+</html>

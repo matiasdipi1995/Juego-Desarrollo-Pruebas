@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Panel Admin - Evento Especial</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/menu.css">
+  <style>
+    /* Estilos específicos para el Panel de Administración sin perder la estética */
+    .admin-card {
+      width: 100%;
+      max-width: 550px;
+      padding: 25px;
+      box-sizing: border-box;
+    }
+
+    .admin-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .admin-header h1 {
+      color: #ffca28;
+      font-size: 20px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin: 0 0 10px 0;
+      text-shadow: 0 0 8px rgba(255, 202, 40, 0.4);
+    }
+
+    .status-dashboard {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid #444;
+      border-radius: 6px;
+      padding: 12px 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .status-badge {
+      color: #00e5ff;
+      font-weight: bold;
+    }
+
+    .count-badge {
+      background: #ff4444;
+      color: #fff;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-weight: bold;
+    }
+
+    .admin-players-container {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 10px;
+      max-height: 220px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+    }
+
+    .admin-players-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .admin-players-list li {
+      padding: 8px 12px;
+      border-bottom: 1px solid #222;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+    }
+
+    .admin-players-list li:nth-child(even) {
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    .admin-players-list li:last-child {
+      border-bottom: none;
+    }
+
+    .player-id-tag {
+      font-size: 11px;
+      color: #888;
+      font-family: monospace;
+    }
+
+    .btn-start-event {
+      background-color: #ff4444;
+      color: #fff;
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .btn-start-event:hover:not(:disabled) {
+      background-color: #ff6666;
+    }
+
+    .btn-start-event:disabled {
+      background-color: #444;
+      color: #888;
+      cursor: not-allowed;
+      border-color: #333;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PANTALLA PRINCIPAL ADMIN -->
+  <div class="screen active">
+    <div class="menu-card admin-card">
+      
+      <div class="admin-header">
+        <h1>CONTROL DE EVENTO ESPECIAL</h1>
+        <p class="status-message" style="margin: 0;">Panel Administrador de Torneo Eliminatorio</p>
+      </div>
+
+      <!-- DASHBOARD DE ESTADO -->
+      <div class="status-dashboard">
+        <span>Estado: <span id="event-status" class="status-badge">Esperando jugadores</span></span>
+        <span>Conectados: <span id="player-count" class="count-badge">0</span></span>
+      </div>
+
+      <!-- LISTA DE JUGADORES EN SALA DE ESPERA -->
+      <div class="players-list-container admin-players-container">
+        <h4>Jugadores en Sala de Espera:</h4>
+        <ul id="admin-players-list" class="admin-players-list">
+          <!-- Se completa dinámicamente -->
+        </ul>
+      </div>
+
+      <!-- ACCIONES DE ADMINISTRACIÓN -->
+      <button id="btn-start-event" class="btn-option btn-action btn-start-event" disabled>
+        🚀 INICIAR TORNEO ELIMINATORIO
+      </button>
+
+      <p id="admin-system-msg" class="status-message" style="margin-top: 15px; min-height: 18px;"></p>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+  // Detecta si estás probando en PC o en Render
+  const SERVER_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:3000'
+    : 'https://juego-en-desarrollo.onrender.com';
+
+  const socket = io(SERVER_URL);
+
+  const playerCountEl = document.getElementById('player-count');
+  const playersListEl = document.getElementById('admin-players-list');
+  const btnStartEvent = document.getElementById('btn-start-event');
+  const eventStatusEl = document.getElementById('event-status');
+  const systemMsgEl = document.getElementById('admin-system-msg');
+
+  // Al conectar, registrarse explícitamente como administrador
+  socket.on('connect', () => {
+    systemMsgEl.textContent = 'Conectado al servidor como Administrador.';
+    socket.emit('registerAdmin');
+  });
+
+  // Escuchar actualización constante de jugadores en la sala de espera
+  socket.on('updateSpecialEventLobby', (players) => {
+    playerCountEl.textContent = players.length;
+    playersListEl.innerHTML = '';
+
+    if (players.length === 0) {
+      const emptyLi = document.createElement('li');
+      emptyLi.textContent = 'Sin jugadores en espera...';
+      emptyLi.style.color = '#888';
+      playersListEl.appendChild(emptyLi);
+    } else {
+      players.forEach((player, index) => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <span><b>#${index + 1}</b> ${player.name}</span>
+          <span class="player-id-tag">ID: ${player.id.substring(0, 6)}...</span>
+        `;
+        playersListEl.appendChild(li);
+      });
+    }
+
+    // Habilitar botón si hay al menos 2 jugadores listos
+    btnStartEvent.disabled = players.length < 2;
+  });
+
+  // Escuchar si el torneo ya fue iniciado
+  socket.on('specialEventStartedSuccess', () => {
+    eventStatusEl.textContent = 'EN CURSO';
+    eventStatusEl.style.color = '#00e5ff';
+    systemMsgEl.textContent = '¡Torneo lanzado con éxito! Las llaves han sido distribuidas.';
+    btnStartEvent.disabled = true;
+  });
+
+  // Evento del botón para iniciar el torneo
+  btnStartEvent.addEventListener('click', () => {
+    if (confirm('¿Deseas iniciar el Evento Especial con los jugadores conectados?')) {
+      systemMsgEl.textContent = 'Iniciando evento... Generando cuadro eliminatorio.';
+      socket.emit('adminStartSpecialEvent');
+    }
+  });
+
+  socket.on('disconnect', () => {
+    systemMsgEl.textContent = 'Conexión perdida con el servidor. Reconectando...';
+  });
+</script>
+</body>
+</html>

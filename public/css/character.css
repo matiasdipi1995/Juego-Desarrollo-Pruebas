@@ -1,0 +1,102 @@
+body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #111 url('../img/backgrounds/main_bg.jpeg') no-repeat center center/cover;
+  font-family: 'Arial', sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.selection-card {
+  width: 90%;
+  max-width: 600px;
+  background: rgba(15, 15, 25, 0.95);
+  border: 3px solid #00e5ff;
+  border-radius: 20px;
+  padding: 25px;
+  box-shadow: 0 0 25px rgba(0, 229, 255, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.title {
+  color: #fff;
+  margin: 0;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px #00e5ff;
+}
+
+.characters-container {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+}
+
+.char-card {
+  flex: 1;
+  background: #1e1e2d;
+  border: 2px solid #444;
+  border-radius: 12px;
+  padding: 15px;
+  cursor: pointer;
+  text-align: center;
+  color: #fff;
+  transition: all 0.2s ease;
+}
+
+.char-card:hover {
+  transform: translateY(-5px);
+  border-color: #00e5ff;
+}
+
+.char-card.selected {
+  border-color: #ff9800;
+  box-shadow: 0 0 15px #ff9800;
+  background: #2a2a3d;
+}
+
+.char-avatar {
+  width: 60px;
+  height: 80px;
+  margin: 0 auto 10px auto;
+  border-radius: 6px;
+}
+
+.warrior-avatar { background: #ff4444; }
+.mage-avatar { background: #4488ff; }
+
+.char-card h3 { margin: 5px 0; }
+.char-card p { font-size: 12px; color: #aaa; margin: 0; }
+
+.btn-start-fight {
+  width: 100%;
+  padding: 14px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(135deg, #ff9800, #e65100);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.btn-start-fight:disabled {
+  background: #444;
+  color: #888;
+  cursor: not-allowed;
+}
+
+.btn-back {
+  background: transparent;
+  border: 1px solid #777;
+  color: #ccc;
+  padding: 8px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+}

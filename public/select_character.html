@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seleccionar Personaje</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/character.css">
+</head>
+<body>
+
+  <div class="selection-card">
+    <h2 class="title">Elige tu Personaje</h2>
+
+    <div class="characters-container">
+      <!-- Tarjeta Guerrero -->
+      <div class="char-card" onclick="selectPlayerChar('warrior')" id="card-warrior">
+        <div class="char-avatar warrior-avatar"></div>
+        <h3>Guerrero</h3>
+        <p>Ataque cuerpo a cuerpo y Rayo de energía devastador.</p>
+      </div>
+
+      <!-- Tarjeta Mago -->
+      <div class="char-card" onclick="selectPlayerChar('mage')" id="card-mage">
+        <div class="char-avatar mage-avatar"></div>
+        <h3>Mago</h3>
+        <p>Ataques a distancia con proyectiles y Dash rápido.</p>
+      </div>
+    </div>
+
+    <button id="btn-start-fight" class="btn-start-fight" onclick="confirmSelection()" disabled>
+      ¡Pelear!
+    </button>
+    <button class="btn-back" onclick="location.href='select_difficulty.html'">Volver</button>
+  </div>
+
+  <script src="js/character.js"></script>
+</body>
+</html>

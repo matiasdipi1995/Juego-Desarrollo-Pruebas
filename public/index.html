@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Lucha Retro</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/menu.css">
+</head>
+<body>
+
+  <!-- 1. PANTALLA DE INICIO (PORTADA) -->
+  <div id="intro-screen" class="screen active">
+    <button class="btn-start" onclick="enterMenu()">¡Iniciar Juego!</button>
+  </div>
+
+  <!-- 2. PANTALLA DE SELECCIÓN DE MODO -->
+  <div id="menu-screen" class="screen">
+    <div class="menu-card">
+      <div class="banner-container">
+        <img src="img/backgrounds/Logo_Menu.png" alt="Logo del Juego" class="game-banner">
+      </div>
+
+      <div class="menu-options">
+        <button class="btn-option" onclick="openFreePlayModal()">1 vs 1 Online</button>
+        <button class="btn-option" onclick="location.href='local_game.html'">Partida en una sola pantalla</button>
+        <button class="btn-option" onclick="startVsBot()">1 vs Máquina</button>
+        <button class="btn-option" onclick="openTournamentModal()">Torneo en Red Local</button>
+        <!-- BOTÓN ACTIVADO PARA EL EVENTO ESPECIAL -->
+        <button id="btn-special-event" class="btn-option" onclick="openSpecialEventModal()">Evento Especial</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE 1v1 PELEA LIBRE EN RED LOCAL -->
+  <div id="free-play-modal" class="modal" style="display: none;">
+    <div class="modal-content menu-card">
+      <h2>ARENA DE COMBATE LIBRE</h2>
+      
+      <div class="input-group">
+        <label for="username">Tu Nombre:</label>
+        <input type="text" id="username" class="retro-input" placeholder="Ej: DragonSlayer" maxlength="12">
+      </div>
+
+      <div class="menu-buttons">
+        <button id="btn-create-room" class="btn-option btn-action">Crear Sala Privada</button>
+        
+        <div class="join-room-box">
+          <input type="text" id="room-code-input" class="retro-input uppercase" placeholder="CÓDIGO DE SALA" maxlength="6">
+          <button id="btn-join-room" class="btn-option btn-action">Unirse a Sala</button>
+        </div>
+      </div>
+
+      <p id="menu-status" class="status-message"></p>
+      <button class="btn-option btn-back" onclick="closeFreePlayModal()">VOLVER</button>
+    </div>
+  </div>
+
+  <!-- MODAL DE CONFIGURACIÓN DE TORNEO -->
+  <div id="tournament-modal" class="modal" style="display: none;">
+    <div class="modal-content menu-card tournament-card">
+      <h2 class="tournament-title">TORNEO DOBLE ELIMINACIÓN</h2>
+      
+      <div class="input-group">
+        <label for="tournament-username">Nombre del Jugador</label>
+        <input type="text" id="tournament-username" class="retro-input" placeholder="Ej: GuerreroX" maxlength="12">
+      </div>
+
+      <div id="tournament-setup-panel">
+        <div class="tournament-section">
+          <h3>CREAR SALA</h3>
+          <div class="select-wrapper">
+            <select id="tournament-size" class="retro-select">
+              <option value="4">4 Jugadores</option>
+              <option value="8">8 Jugadores</option>
+              <option value="16">16 Jugadores</option>
+            </select>
+          </div>
+          <button id="btn-create-tournament" class="btn-option btn-action">CREAR TORNEO</button>
+        </div>
+
+        <hr class="divider">
+
+        <div class="tournament-section">
+          <h3>UNIRSE A SALA</h3>
+          <input type="text" id="tournament-code-input" class="retro-input uppercase" placeholder="CÓDIGO (EJ: X7K9P)" maxlength="5">
+          <button id="btn-join-tournament" class="btn-option btn-action">UNIRSE</button>
+        </div>
+      </div>
+
+      <div id="tournament-lobby-status" style="display: none;" class="lobby-box">
+        <div class="code-container">
+          <span>CÓDIGO DE SALA:</span>
+          <h1 id="t-code-display" class="glow-code">----</h1>
+        </div>
+
+        <p id="t-status-msg" class="status-pulse">Esperando jugadores...</p>
+        
+        <div class="players-list-container">
+          <h4>Jugadores Conectados:</h4>
+          <ul id="t-players-list"></ul>
+        </div>
+      </div>
+
+      <button class="btn-option btn-back" onclick="closeTournamentModal()">VOLVER</button>
+    </div>
+  </div>
+
+  <!-- MODAL DE EVENTO ESPECIAL (SALA DE ESPERA CONTROLADA POR ADMIN) -->
+  <div id="special-event-modal" class="modal" style="display: none;">
+    <div class="modal-content menu-card tournament-card">
+      <h2 class="tournament-title">EVENTO ESPECIAL: ELIMINATORIA</h2>
+
+      <!-- Panel de ingreso -->
+      <div id="special-event-join-panel">
+        <div class="input-group">
+          <label for="special-event-username">Nombre de Jugador</label>
+          <input type="text" id="special-event-username" class="retro-input" placeholder="Ej: Campeon1" maxlength="12">
+        </div>
+        <!-- RESPALDO ONCLICK AGREGADO -->
+        <button id="btn-join-special-event" type="button" class="btn-option btn-action" onclick="joinSpecialEventLobby()" style="margin-top: 15px;">INGRESAR A SALA DE ESPERA</button>
+      </div>
+
+      <!-- Panel de Sala de Espera -->
+      <div id="special-event-lobby-status" style="display: none;" class="lobby-box">
+        <p class="status-pulse" id="se-status-msg">ESPERANDO A QUE EL ADMINISTRADOR INICIE EL EVENTO...</p>
+
+        <div class="players-list-container">
+          <h4>Jugadores Esperando (<span id="se-player-count">0</span>):</h4>
+          <ul id="se-players-list"></ul>
+        </div>
+      </div>
+
+      <p id="special-event-status" class="status-message" style="margin-top: 10px;"></p>
+      <button class="btn-option btn-back" onclick="closeSpecialEventModal()" style="margin-top: 15px;">VOLVER</button>
+    </div>
+  </div>
+
+  <!-- PANTALLA DEL ÁRBOL DE TORNEO (BRACKET) -->
+  <div id="tournament-bracket-screen" class="modal" style="display: none;">
+    <div class="modal-content menu-card bracket-card">
+      <h2 class="tournament-title" id="bracket-title">ÁRBOL DEL TORNEO</h2>
+      
+      <div id="match-announcement" class="announcement-box">
+        <span id="next-match-text">PREPARANDO COMBATES SIMULTÁNEOS...</span>
+      </div>
+
+      <div class="bracket-container">
+        <div class="bracket-column" id="winners-bracket">
+          <h3>CUADRO DE GANADORES</h3>
+          <div id="winners-matches"></div>
+        </div>
+        
+        <div class="bracket-column" id="losers-bracket">
+          <h3>CUADRO DE PERDEDORES</h3>
+          <div id="losers-matches"></div>
+        </div>
+      </div>
+
+      <div class="spectator-info">
+        <p>Si tu combate aún no inicia o finalizó, esta pantalla se actualizará automáticamente con los resultados del otro frente.</p>
+      </div>
+      <button id="btn-exit-tournament" class="btn-option btn-back" onclick="exitTournamentToMenu()" style="margin-top: 15px;">VOLVER AL MENÚ</button>
+    </div>
+  </div>
+
+  <!-- PANTALLA DEL JUEGO (CANVAS Y UI DE COMBATE) -->
+  <div id="game-screen" class="game-container" style="display: none;">
+    
+    <div class="ui-layer">
+      <div>
+        <div class="player-label" style="color: #ff4444;" id="ui-warrior-name">Guerrero</div>
+        <div class="health-bar-container"><div id="warrior-hp" class="health-bar-fill"></div></div>
+        <div class="mana-bar-container"><div id="warrior-mana" class="mana-bar-fill"></div></div>
+      </div>
+      <div class="room-info">
+        <span>Sala: <b id="display-room-code">-</b></span>
+      </div>
+      <div>
+        <div class="player-label" style="color: #4488ff; text-align: right;" id="ui-mage-name">Mago</div>
+        <div class="health-bar-container"><div id="mage-hp" class="health-bar-fill"></div></div>
+        <div class="mana-bar-container"><div id="mage-mana" class="mana-bar-fill"></div></div>
+      </div>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+    <!-- CONTROLES TÁCTILES -->
+    <div id="touch-controls">
+      <div class="touch-group left-group">
+        <button id="btn-left" class="touch-btn">◀</button>
+        <button id="btn-right" class="touch-btn">▶</button>
+      </div>
+
+      <div class="touch-group right-group">
+        <button id="btn-jump" class="touch-btn">▲ Saltar</button>
+        <button id="btn-attack" class="touch-btn action-btn">⚔ Atacar</button>
+        <button id="btn-special" class="touch-btn special-btn">⚡</button>
+        <button id="btn-defend" class="touch-btn shield-btn">🛡 Defender</button>
+      </div>
+    </div>
+  </div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+  // Si la página corre en localhost, conecta a local; de lo contrario, usa Render
+  const URL_SERVER = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:3000'
+    : 'https://juego-en-desarrollo.onrender.com';
+
+  window.socket = io(URL_SERVER, {
+    transports: ['websocket', 'polling'],
+    autoConnect: true
+  });
+</script>
+  </script>
+  <script src="js/menu.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Juego de Pelea: vs Bot</title>
+  <link rel="stylesheet" href="css/styles.css">
+
+</head>
+<body>
+  <div id="game-screen" class="game-container">
+    <img src="img/backgrounds/main_bg.jpeg" class="bg-back">
+
+    <!-- CAPA DE BARRAS Y NOMBRES -->
+    <div class="ui-layer">
+      <div>
+        <div class="player-label" style="color: #ff4444;" id="ui-warrior-name">Jugador 1</div>
+        <div class="health-bar-container"><div id="warrior-hp" class="health-bar-fill"></div></div>
+        <div class="mana-bar-container"><div id="warrior-mana" class="mana-bar-fill"></div></div>
+      </div>
+      <div class="room-info">
+        <span>DIFICULTAD: <b id="diff-tag">-</b></span>
+      </div>
+      <div>
+        <div class="player-label" style="color: #4488ff; text-align: right;" id="ui-mage-name">IA Bot</div>
+        <div class="health-bar-container"><div id="mage-hp" class="health-bar-fill"></div></div>
+        <div class="mana-bar-container"><div id="mage-mana" class="mana-bar-fill"></div></div>
+      </div>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+    <!-- CONTROLES TÁCTILES PARA MÓVIL -->
+    <div id="touch-controls">
+      <div class="touch-group left-group">
+        <button id="btn-left" class="touch-btn">◀</button>
+        <button id="btn-right" class="touch-btn">▶</button>
+      </div>
+
+      <div class="touch-group right-group">
+        <button id="btn-jump" class="touch-btn">▲ Saltar</button>
+        <button id="btn-attack" class="touch-btn action-btn">⚔ Atacar</button>
+        <button id="btn-special" class="touch-btn special-btn">⚡</button>
+        <button id="btn-defend" class="touch-btn shield-btn">🛡 Defender</button>
+      </div>
+    </div>
+    <!-- GUÍA DE CONTROLES EN PANTALLA -->
+    <div class="controls-hint">
+      <div class="hint-col">
+        <b style="color: #ff4444;">P1 Guerrero:</b><br>
+        A/D: Moverse | W: Saltar | S: Defender<br>
+        Espacio: Ataque Básico | E (Mantener): Carga/Rayo
+      </div>
+      <div class="hint-col right">
+        <b style="color: #4488ff;">P2 Mago:</b><br>
+        Flechas: Moverse / Saltar / Defender<br>
+        Enter: Disparar | M / Shift Der: Dash Especial
+      </div>
+    </div>
+  </div>
+
+  <script src="js/bot-game.js"></script>
+</body>
+</html>
