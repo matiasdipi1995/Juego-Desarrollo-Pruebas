@@ -10,19 +10,21 @@
 <body>
 
   <div class="game-container">
-        <img src="img/backgrounds/main_bg.jpeg" class="bg-back">
+    <img src="img/backgrounds/main_bg.jpeg" class="bg-back">
 
     <!-- UI DE VIDA Y MANÁ -->
     <div class="ui-layer" style="width: 100%; display: flex; justify-content: space-between; margin-bottom: 10px;">
+      <!-- JUGADOR 1 -->
       <div style="width: 45%;">
-        <div class="player-label" style="color: #ff4444;" id="ui-warrior-name">Guerrero (P1)</div>
-        <div class="health-bar-container"><div id="warrior-hp" class="health-bar-fill" style="width: 100%;"></div></div>
-        <div class="mana-bar-container"><div id="warrior-mana" class="mana-bar-fill" style="width: 100%;"></div></div>
+        <div class="player-label" style="color: #ff4444;" id="p1-name">Jugador 1</div>
+        <div class="health-bar-container"><div id="p1-hp" class="health-bar-fill" style="width: 100%;"></div></div>
+        <div class="mana-bar-container"><div id="p1-mana" class="mana-bar-fill" style="width: 100%;"></div></div>
       </div>
+      <!-- JUGADOR 2 -->
       <div style="width: 45%;">
-        <div class="player-label" style="color: #4488ff; text-align: right;" id="ui-mage-name">Mago (P2)</div>
-        <div class="health-bar-container"><div id="mage-hp" class="health-bar-fill" style="width: 100%;"></div></div>
-        <div class="mana-bar-container"><div id="mage-mana" class="mana-bar-fill" style="width: 100%;"></div></div>
+        <div class="player-label" style="color: #4488ff; text-align: right;" id="p2-name">Jugador 2</div>
+        <div class="health-bar-container"><div id="p2-hp" class="health-bar-fill" style="width: 100%;"></div></div>
+        <div class="mana-bar-container"><div id="p2-mana" class="mana-bar-fill" style="width: 100%;"></div></div>
       </div>
     </div>
 
@@ -32,14 +34,14 @@
     <!-- GUÍA DE CONTROLES EN PANTALLA -->
     <div class="controls-hint">
       <div class="hint-col">
-        <b style="color: #ff4444;">P1 Guerrero:</b><br>
+        <b style="color: #ff4444;" id="p1-controls-title">P1 (Teclas W/A/S/D):</b><br>
         A/D: Moverse | W: Saltar | S: Defender<br>
-        Espacio: Ataque Básico | E (Mantener): Carga/Rayo
+        Espacio: Ataque Básico | E (Mantener/Presionar): Habilidad Especial
       </div>
       <div class="hint-col right">
-        <b style="color: #4488ff;">P2 Mago:</b><br>
+        <b style="color: #4488ff;" id="p2-controls-title">P2 (Teclas Flechas):</b><br>
         Flechas: Moverse / Saltar / Defender<br>
-        Enter: Disparar | M / Shift Der: Dash Especial
+        Enter: Ataque Básico | M / Shift Der: Habilidad Especial
       </div>
     </div>
   </div>

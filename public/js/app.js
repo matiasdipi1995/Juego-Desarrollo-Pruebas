@@ -624,6 +624,89 @@ class WarriorBeam {
   }
 }
 
+class ArrowProjectile {
+  constructor(x, y, dir, damage = 35) {
+    this.x = x;
+    this.y = y;
+    this.dir = dir;
+    this.speed = 11 * dir; // Más rápido que el disparo normal del mago
+    this.damage = damage;
+    this.width = 24;
+    this.height = 6;
+    this.active = true;
+  }
+
+  update() {
+    this.x += this.speed;
+    if (this.x < -50 || this.x > canvas.width + 50) {
+      this.active = false;
+    }
+  }
+
+  draw() {
+    if (!this.active) return;
+    
+    // Cuerpo de la flecha
+    ctx.fillStyle = '#8d6e63';
+    ctx.fillRect(this.x, this.y - this.height / 2, this.width, this.height);
+
+    // Punta metálica
+    ctx.fillStyle = '#cfd8dc';
+    const tipX = this.dir === 1 ? this.x + this.width : this.x;
+    ctx.beginPath();
+    ctx.moveTo(tipX, this.y - this.height);
+    ctx.lineTo(tipX + (10 * this.dir), this.y);
+    ctx.lineTo(tipX, this.y + this.height);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+class ArcherBigArrow {
+  constructor(x, y, dir, damage) {
+    this.x = x;
+    this.y = y;
+    this.dir = dir;
+    this.speed = 18 * dir; // Desplazamiento horizontal muy rápido
+    this.damage = damage;  // Se calcula como el 65% de la vida total del oponente
+    this.width = 75;
+    this.height = 20;
+    this.active = true;
+    this.hasDealtDamage = false;
+  }
+
+  update() {
+    this.x += this.speed;
+    if (this.x < -100 || this.x > canvas.width + 100) {
+      this.active = false;
+    }
+  }
+
+  draw() {
+    if (!this.active) return;
+
+    // Gran flecha con efecto de brillo/fuego elemental
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#ff9800';
+
+    ctx.fillStyle = '#ff5722';
+    ctx.fillRect(this.x, this.y - this.height / 2, this.width, this.height);
+
+    // Punta gigantesca
+    ctx.fillStyle = '#ffe082';
+    const tipX = this.dir === 1 ? this.x + this.width : this.x;
+    ctx.beginPath();
+    ctx.moveTo(tipX, this.y - this.height * 1.5);
+    ctx.lineTo(tipX + (22 * this.dir), this.y);
+    ctx.lineTo(tipX, this.y + this.height * 1.5);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.shadowBlur = 0; // Limpiar brillo para no ralentizar otros elementos
+  }
+}
+
+
 class Character {
   constructor(x, y, color, hpId, manaId) {
     this.startX = x; this.startY = y;
@@ -1020,6 +1103,187 @@ class Mage extends Character {
   }
 }
 
+class Archer extends Character {
+  constructor(x, y) {
+    // Registramos la clase vinculada a barras de UI propias 'archer-hp' y 'archer-mana'
+    super(x, y, '#2e7d32', 'archer-hp', 'archer-mana');
+    this.projectiles = []; 
+    this.specialArrow = null;
+    this.canAttack = true;
+    this.attackCooldown = 750; // Ataque más lento que el del Mago (600ms)
+    this.basicDamage = 35;      // Más daño que el ataque del Guerrero (20) y Mago (15)
+  }
+
+  reset() {
+    super.reset();
+    this.projectiles = [];
+    this.specialArrow = null;
+    this.canAttack = true;
+  }
+
+  shootBasicProjectile() {
+    const spawnX = this.direction === 1 ? this.x + this.width : this.x;
+    const spawnY = this.y + 25;
+    socket.emit('archerShoot', { x: spawnX, y: spawnY, dir: this.direction, roomCode: myRoomCode });
+  }
+
+  shootSpecialArrow(opponent) {
+    const spawnX = this.direction === 1 ? this.x + this.width : this.x;
+    const spawnY = this.y + (this.height / 2);
+    // Inflinge un 65% del daño respecto a la vida total
+    const specialDamage = opponent ? opponent.maxHealth * 0.65 : 65; 
+
+    this.specialArrow = new ArcherBigArrow(spawnX, spawnY, this.direction, specialDamage);
+
+    socket.emit('archerSpecial', { 
+      x: spawnX, 
+      y: spawnY, 
+      dir: this.direction, 
+      damage: specialDamage, 
+      roomCode: myRoomCode 
+    });
+  }
+
+  update(opponent) {
+    this.regenMana();
+
+    if (myRole === 'archer') {
+      if (roundActive) {
+        // Defensa/Bloqueo (Tecla S o Flecha Abajo)
+        const pressingDefense = keys['KeyS'] || keys['ArrowDown'] || false;
+        if (pressingDefense && !this.isDefending) {
+          defenseSFX.currentTime = 0;
+          defenseSFX.play().catch(e => console.log(e));
+          socket.emit('defenseSound', { roomCode: myRoomCode });
+        }
+        this.isDefending = pressingDefense;
+
+        if (!this.isDefending) {
+          // Movimiento horizontal y salto
+          if ((keys['KeyA'] || keys['ArrowLeft']) && this.x > 0) { 
+            this.x -= this.speed; 
+            this.direction = -1; 
+          }
+          if ((keys['KeyD'] || keys['ArrowRight']) && this.x + this.width < canvas.width) { 
+            this.x += this.speed; 
+            this.direction = 1; 
+          }
+          if ((keys['KeyW'] || keys['ArrowUp']) && this.onGround) { 
+            this.velocityY = this.jumpPower; 
+            this.onGround = false; 
+          }
+
+          // Ataque básico (Espacio o Enter)
+          if ((keys['Space'] || keys['Enter']) && this.canAttack) {
+            this.shootBasicProjectile();
+
+            if (typeof archerBasicAttackSFX !== 'undefined') {
+              archerBasicAttackSFX.currentTime = 0;
+              archerBasicAttackSFX.play().catch(e => console.log(e));
+            }
+            socket.emit('basicAttackSound', { role: 'archer', roomCode: myRoomCode });
+
+            this.canAttack = false;
+            setTimeout(() => this.canAttack = true, this.attackCooldown);
+          }
+
+          // Ataque Especial (Tecla E o ShiftRight/M) -> Requiere 100 Mana
+          if ((keys['KeyE'] || keys['ShiftRight'] || keys['KeyM']) && this.mana >= 100) {
+            this.mana = 0;
+            this.updateManaBar();
+
+            this.shootSpecialArrow(opponent);
+
+            if (typeof archerSpecialSFX !== 'undefined') {
+              archerSpecialSFX.currentTime = 0;
+              archerSpecialSFX.play().catch(e => console.log(e));
+            }
+            socket.emit('specialAttackSound', { role: 'archer', roomCode: myRoomCode });
+          }
+        }
+
+        // Gravedad y plataforma
+        this.velocityY += this.gravity;
+        this.y += this.velocityY;
+        if (this.y >= 300) { 
+          this.y = 300; 
+          this.velocityY = 0; 
+          this.onGround = true; 
+        }
+      }
+
+      // Sincronización Socket de red
+      const now = Date.now();
+      if (now - lastNetworkSend > 40) {
+        socket.emit('playerAction', {
+          x: this.x, y: this.y, direction: this.direction,
+          isDefending: this.isDefending, mana: this.mana, roomCode: myRoomCode
+        });
+        lastNetworkSend = now;
+      }
+    } else {
+      this.interpolatePosition();
+    }
+
+    // 1. Colisiones de Proyectiles Básico (Flechas)
+    this.projectiles.forEach(p => {
+      p.update();
+      const pBox = { x: p.x, y: p.y - p.height / 2, width: p.width, height: p.height };
+
+      if (p.active && checkRectCollision(pBox, opponent)) {
+        if (myRole === 'archer' && roundActive) {
+          opponent.applyDamage(p.damage);
+          socket.emit('sendDamage', { target: opponent.role || 'opponent', amount: p.damage, roomCode: myRoomCode });
+        }
+        p.active = false;
+      }
+    });
+    this.projectiles = this.projectiles.filter(p => p.active);
+
+    // 2. Colisión del Ataque Especial (Flecha Grande)
+    if (this.specialArrow) {
+      this.specialArrow.update();
+      const specialBox = { 
+        x: this.specialArrow.x, 
+        y: this.specialArrow.y - this.specialArrow.height / 2, 
+        width: this.specialArrow.width, 
+        height: this.specialArrow.height 
+      };
+
+      if (this.specialArrow.active && !this.specialArrow.hasDealtDamage) {
+        if (checkRectCollision(specialBox, opponent)) {
+          if (myRole === 'archer' && roundActive) {
+            opponent.applyDamage(this.specialArrow.damage);
+            socket.emit('sendDamage', { target: opponent.role || 'opponent', amount: this.specialArrow.damage, roomCode: myRoomCode });
+            this.specialArrow.hasDealtDamage = true;
+          }
+        }
+      }
+
+      if (!this.specialArrow.active) {
+        this.specialArrow = null;
+      }
+    }
+  }
+
+  draw() {
+    super.draw();
+
+    // Visual del personaje (Sombrero de arquero)
+    ctx.fillStyle = '#1b5e20';
+    ctx.fillRect(this.x - 2, this.y - 12, this.width + 4, 10);
+    ctx.fillStyle = '#b71c1c'; // Pluma roja
+    const featherX = this.direction === 1 ? this.x + 4 : this.x + this.width - 8;
+    ctx.fillRect(featherX, this.y - 22, 4, 10);
+
+    // Renderizar flechas activas y especial
+    this.projectiles.forEach(p => p.draw());
+    if (this.specialArrow) {
+      this.specialArrow.draw();
+    }
+  }
+}
+
 // -------------------------------------------------------------
 // BUCLE DE JUEGO E INICIALIZACIÓN
 // -------------------------------------------------------------
@@ -1028,10 +1292,19 @@ const mage = new Mage(660, 300);
 let bgImage = new Image();
 let bgLoaded = false;
 
+
+// Acá mejoré la función para reiniciar las entidades así si es que se sale de la pantalla o termina la partida se borran los proyectiles que se hayan lanzado en el momento
 function resetEntities() {
-  warrior.reset();
-  mage.reset();
-  mage.projectiles = [];
+  if (typeof warrior !== 'undefined') warrior.reset();
+  if (typeof mage !== 'undefined') {
+    mage.reset();
+    mage.projectiles = [];
+  }
+  if (typeof archer !== 'undefined') {
+    archer.reset();
+    archer.projectiles = [];
+    archer.specialArrow = null;
+  }
 }
 
 // Carga del fondo asegurando el redraw

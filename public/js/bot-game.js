@@ -91,6 +91,87 @@ class WarriorBeam {
   }
 }
 
+// PROYECTILES DEL ARQUERO
+// Flecha Básica
+class Arrow {
+  constructor(x, y, direction) {
+    this.x = x;
+    this.y = y;
+    this.width = 25;
+    this.height = 4;
+    this.speed = 12;
+    this.direction = direction; // 1: derecha, -1: izquierda
+    this.damage = 25;
+    this.active = true;
+  }
+
+  update() {
+    this.x += this.speed * this.direction;
+    if (this.x < 0 || this.x > canvas.width) {
+      this.active = false;
+    }
+  }
+
+  draw() {
+    ctx.save();
+    ctx.fillStyle = '#d4a373';
+    ctx.fillRect(this.x, this.y - 2, this.direction * 25, 4);
+
+    // Punta de la flecha
+    ctx.fillStyle = '#cccccc';
+    ctx.beginPath();
+    const tipX = this.x + (this.direction * 25);
+    ctx.moveTo(tipX, this.y - 5);
+    ctx.lineTo(tipX + (this.direction * 8), this.y);
+    ctx.lineTo(tipX, this.y + 5);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// Flecha Gigante (Ataque Especial - 65% de daño)
+class BigArrow {
+  constructor(x, y, direction) {
+    this.x = x;
+    this.y = y;
+    this.width = 70;
+    this.height = 16;
+    this.speed = 9;
+    this.direction = direction;
+    this.damage = 325; // 65% de 500 HP
+    this.active = true;
+  }
+
+  update() {
+    this.x += this.speed * this.direction;
+    if (this.x < -100 || this.x > canvas.width + 100) {
+      this.active = false;
+    }
+  }
+
+  draw() {
+    ctx.save();
+    // Cuerpo de la gran flecha
+    ctx.fillStyle = '#e76f51';
+    ctx.fillRect(this.x, this.y - 8, this.direction * 60, 16);
+
+    // Punta dorada/brillante
+    ctx.fillStyle = '#f4a261';
+    ctx.beginPath();
+    const tipX = this.x + (this.direction * 60);
+    ctx.moveTo(tipX, this.y - 15);
+    ctx.lineTo(tipX + (this.direction * 25), this.y);
+    ctx.lineTo(tipX, this.y + 15);
+    ctx.fill();
+
+    // Estela luminosa alrededor
+    ctx.strokeStyle = 'rgba(231, 111, 81, 0.5)';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(this.x, this.y - 10, this.direction * 60, 20);
+    ctx.restore();
+  }
+}
+
 // --- CLASE BASE DE PERSONAJE ---
 class Character {
   constructor(x, y, color, hpId, manaId) {
@@ -389,6 +470,117 @@ class MagePlayer extends Character {
       ctx.fillRect(this.x - (15 * this.direction), trailY, this.width + 15, this.height);
     }
     this.projectiles.forEach(p => p.draw());
+  }
+}
+
+class Archer extends Character {
+  constructor(x, y) {
+    super(x, y, '#2a9d8f', 'warrior-hp', 'warrior-mana');
+    this.arrows = [];
+    this.bigArrows = [];
+    this.canAttack = true;
+    this.attackCooldown = 350;
+  }
+
+  reset() {
+    super.reset();
+    this.arrows = [];
+    this.bigArrows = [];
+    this.canAttack = true;
+  }
+
+  handleInput(opponent) {
+    if (!roundActive) return;
+
+    this.isDefending = !!keys['KeyS'];
+
+    if (!this.isDefending) {
+      if (keys['KeyA'] && this.x > 0) {
+        this.x -= this.speed;
+        this.direction = -1;
+      }
+      if (keys['KeyD'] && this.x + this.width < canvas.width) {
+        this.x += this.speed;
+        this.direction = 1;
+      }
+      if (keys['KeyW'] && this.onGround) {
+        this.velocityY = this.jumpPower;
+        this.onGround = false;
+      }
+
+      // Disparo Básico (Espacio)
+      if (keys['Space'] && this.canAttack) {
+        const spawnX = this.direction === 1 ? this.x + this.width : this.x;
+        this.arrows.push(new Arrow(spawnX, this.y + 30, this.direction));
+        this.canAttack = false;
+        setTimeout(() => this.canAttack = true, this.attackCooldown);
+      }
+
+      // Ataque Especial: Flecha Gigante (Tecla E - Requiere 100 Maná)
+      if (keys['KeyE'] && this.mana >= 100) {
+        this.mana = 0;
+        this.updateManaBar();
+        const spawnX = this.direction === 1 ? this.x + this.width : this.x;
+        this.bigArrows.push(new BigArrow(spawnX, this.y + 30, this.direction));
+      }
+    }
+  }
+
+  update(opponent) {
+    this.regenMana();
+    this.handleInput(opponent);
+
+    // Física
+    this.velocityY += this.gravity;
+    this.y += this.velocityY;
+    if (this.y >= 300) {
+      this.y = 300;
+      this.velocityY = 0;
+      this.onGround = true;
+    }
+
+    // Colisión de flechas básicas
+    this.arrows.forEach(arrow => {
+      arrow.update();
+      if (arrow.active && checkRectCollision(arrow, opponent)) {
+        if (roundActive) opponent.applyDamage(arrow.damage);
+        arrow.active = false;
+      }
+    });
+    this.arrows = this.arrows.filter(a => a.active);
+
+    // Colisión de la flecha gigante
+    this.bigArrows.forEach(bigArrow => {
+      bigArrow.update();
+      if (bigArrow.active && checkRectCollision(bigArrow, opponent)) {
+        if (roundActive) opponent.applyDamage(bigArrow.damage);
+        bigArrow.active = false;
+      }
+    });
+    this.bigArrows = this.bigArrows.filter(ba => ba.active);
+  }
+
+  draw() {
+    ctx.save();
+    ctx.fillStyle = this.isHit ? '#ffffff' : this.color;
+    ctx.fillRect(this.x, this.y, this.width, this.height);
+
+    // Arco
+    ctx.strokeStyle = '#8b5a2b';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    const bowX = this.direction === 1 ? this.x + this.width + 5 : this.x - 5;
+    ctx.arc(bowX, this.y + 35, 20, -Math.PI / 2, Math.PI / 2, this.direction === -1);
+    ctx.stroke();
+
+    if (this.isDefending) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.fillRect(this.x - 5, this.y - 5, this.width + 10, this.height + 10);
+    }
+    ctx.restore();
+
+    this.arrows.forEach(a => a.draw());
+    this.bigArrows.forEach(ba => ba.draw());
   }
 }
 
@@ -717,23 +909,131 @@ class WarriorBot extends Character {
   }
 }
 
+class ArcherBot extends Character {
+  constructor(x, y) {
+    super(x, y, '#107c41', 'mage-hp', 'mage-mana');
+    this.direction = -1;
+    this.arrows = [];
+    this.bigArrows = [];
+    this.canAttack = true;
+    this.attackCooldown = 400;
+  }
+
+  reset() {
+    super.reset();
+    this.arrows = [];
+    this.bigArrows = [];
+    this.canAttack = true;
+  }
+
+  updateAI(player) {
+    if (!roundActive) return;
+
+    const dist = player.x - this.x;
+    const absDist = Math.abs(dist);
+    this.direction = dist > 0 ? 1 : -1;
+
+    // Distancia táctica
+    if (absDist < 220) {
+      if (this.direction === 1 && this.x > 0) this.x -= this.speed;
+      else if (this.direction === -1 && this.x + this.width < canvas.width) this.x += this.speed;
+    } else if (absDist > 380) {
+      if (this.direction === 1 && this.x + this.width < canvas.width) this.x += this.speed;
+      else if (this.direction === -1 && this.x > 0) this.x -= this.speed;
+    }
+
+    // Ataque Básico
+    if (this.canAttack && Math.random() < 0.04) {
+      const spawnX = this.direction === 1 ? this.x + this.width : this.x;
+      this.arrows.push(new Arrow(spawnX, this.y + 30, this.direction));
+      this.canAttack = false;
+      setTimeout(() => this.canAttack = true, this.attackCooldown);
+    }
+
+    // Especial: Flecha Gigante (Lanza cuando junta 100 de Maná)
+    if (this.mana >= 100 && Math.random() < 0.03) {
+      this.mana = 0;
+      this.updateManaBar();
+      const spawnX = this.direction === 1 ? this.x + this.width : this.x;
+      this.bigArrows.push(new BigArrow(spawnX, this.y + 30, this.direction));
+    }
+  }
+
+  update(player) {
+    this.regenMana();
+    this.updateAI(player);
+
+    this.velocityY += this.gravity;
+    this.y += this.velocityY;
+    if (this.y >= 300) {
+      this.y = 300;
+      this.velocityY = 0;
+      this.onGround = true;
+    }
+
+    this.arrows.forEach(arrow => {
+      arrow.update();
+      if (arrow.active && checkRectCollision(arrow, player)) {
+        if (roundActive) player.applyDamage(arrow.damage);
+        arrow.active = false;
+      }
+    });
+    this.arrows = this.arrows.filter(a => a.active);
+
+    this.bigArrows.forEach(bigArrow => {
+      bigArrow.update();
+      if (bigArrow.active && checkRectCollision(bigArrow, player)) {
+        if (roundActive) player.applyDamage(bigArrow.damage);
+        bigArrow.active = false;
+      }
+    });
+    this.bigArrows = this.bigArrows.filter(ba => ba.active);
+  }
+
+  draw() {
+    ctx.save();
+    ctx.fillStyle = this.isHit ? '#ffffff' : this.color;
+    ctx.fillRect(this.x, this.y, this.width, this.height);
+
+    ctx.strokeStyle = '#8b5a2b';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    const bowX = this.direction === 1 ? this.x + this.width + 5 : this.x - 5;
+    ctx.arc(bowX, this.y + 35, 20, -Math.PI / 2, Math.PI / 2, this.direction === -1);
+    ctx.stroke();
+    ctx.restore();
+
+    this.arrows.forEach(a => a.draw());
+    this.bigArrows.forEach(ba => ba.draw());
+  }
+}
 // --- INSTANCIACIÓN ---
 let player1, botPlayer;
 
+// Instanciación Jugador 1
 if (playerCharType === 'warrior') {
   player1 = new Warrior(100, 300);
   const el = document.getElementById('ui-warrior-name');
   if (el) el.innerText = "Guerrero (P1)";
+} else if (playerCharType === 'archer') {
+  player1 = new Archer(100, 300);
+  const el = document.getElementById('ui-warrior-name');
+  if (el) el.innerText = "Arquero (P1)";
 } else {
   player1 = new MagePlayer(100, 300);
   const el = document.getElementById('ui-warrior-name');
   if (el) el.innerText = "Mago (P1)";
 }
 
+// Instanciación Bot (IA)
 if (botCharType === 'mage') {
   botPlayer = new MageBot(660, 300, difficulty);
   const el = document.getElementById('ui-mage-name');
   if (el) el.innerText = "Mago (IA)";
+} else if (botCharType === 'archer') {
+  botPlayer = new ArcherBot(660, 300, difficulty);
+  const el = document.getElementById('ui-mage-name');
+  if (el) el.innerText = "Arquero (IA)";
 } else {
   botPlayer = new WarriorBot(660, 300, difficulty);
   const el = document.getElementById('ui-mage-name');
@@ -766,8 +1066,13 @@ function drawUI() {
   ctx.font = 'bold 22px Arial';
   ctx.textAlign = 'center';
   
-  const p1Name = playerCharType === 'warrior' ? 'Guerrero' : 'Mago';
-  const botName = botCharType === 'mage' ? 'Mago (IA)' : 'Guerrero (IA)';
+  let p1Name = "Guerrero";
+  if (playerCharType === 'mage') p1Name = "Mago";
+  else if (playerCharType === 'archer') p1Name = "Arquero";
+
+  let botName = "Guerrero (IA)";
+  if (botCharType === 'mage') botName = "Mago (IA)";
+  else if (botCharType === 'archer') botName = "Arquero (IA)";
   
   ctx.fillText(`${p1Name}: ${scores.player1}  VS  ${botName}: ${scores.bot}`, canvas.width / 2, 35);
 
@@ -795,8 +1100,6 @@ function gameLoop() {
   drawUI();
   requestAnimationFrame(gameLoop);
 }
-
-
 
 // --- SOPORTE PARA CONTROLES TÁCTILES EN MÓVILES ---
 function setupTouchEvents() {
@@ -835,17 +1138,6 @@ function setupTouchEvents() {
 
 // Inicializar listener de botones táctiles
 setupTouchEvents();
-
-
-
-
-
-
-
-
-
-
-
 
 startNewRound();
 requestAnimationFrame(gameLoop);
