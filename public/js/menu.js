@@ -48,7 +48,15 @@ function startVsBot() {
 
 // Conexión Socket
 // const socket = io();
-
+// --- CONEXIÓN A SOCKET.IO CON AUTENTICACIÓN JWT ---
+// Obtener el token guardado tras el Login
+const token = localStorage.getItem('token');
+// Conectar Socket.io enviando el token en auth
+const socket = io({
+    auth: {
+        token: token
+    }
+});
 // MODALES PELEA LIBRE 1v1
 function openFreePlayModal() {
   document.getElementById('free-play-modal').style.display = 'flex';

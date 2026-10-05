@@ -1,14 +1,23 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
+const path = require('path'); // 1. Agregado aquí
 const { Server } = require('socket.io');
 const cors = require('cors');
+
+// 2. Importar conexión a la Base de Datos y Rutas
+const db = require('./config/db');
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 const server = http.createServer(app);
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+app.use('/api/auth', authRoutes);
+
+// 2. Configuración robusta para la carpeta pública
+app.use(express.static(path.join(__dirname, 'public'))); 
 
 const io = new Server(server, { cors: { origin: "*" } });
 
@@ -460,6 +469,27 @@ function buildNextRound(tCode) {
 
 
 // --- EVENTOS SOCKET.IO ---
+const jwt = require('jsonwebtoken');
+// En server.js:
+io.use((socket, next) => {
+    const token = socket.handshake.auth.token;
+
+    if (!token) {
+        // Permitir la conexión temporal como invitado/desconectado
+        socket.usuario = null;
+        return next();
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        socket.usuario = decoded;
+        next();
+    } catch (err) {
+        // Si el token expiró o es falso, permite continuar o rechaza según prefieras
+        socket.usuario = null;
+        next();
+    }
+});
 
 io.on('connection', (socket) => {
   // TEST DE DIAGNÓSTICO
@@ -735,7 +765,26 @@ socket.on('sendDamage', (data) => {
       isGameOver 
     });
 
+
     if (isGameOver) {
+      
+      // 📊 AQUÍ VA EL GUARDADO EN LA BASE DE DATOS (MySQL)
+  
+      if (socket.usuario) {
+        const usuarioId = socket.usuario.id;
+
+        // Actualizamos victorias, partidas jugadas y sumamos monedas
+        db.query(`
+          UPDATE estadisticas 
+          SET victorias = victorias + 1, 
+              partidas_jugadas = partidas_jugadas + 1,
+              monedas = monedas + 50
+          WHERE usuario_id = ?
+        `, [usuarioId])
+        .then(() => console.log(`📊 Estadísticas actualizadas para el usuario ID: ${usuarioId}`))
+        .catch(err => console.error('Error al actualizar estadísticas en MySQL:', err));
+      }
+      // =========================================================
       if (room.tournamentCode) {
         const tCode = room.tournamentCode;
 

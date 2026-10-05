@@ -39,6 +39,8 @@
       align-items: center;
       margin-bottom: 20px;
       font-size: 14px;
+      gap: 8px;
+      flex-direction: column;
     }
 
     .status-badge {
@@ -113,12 +115,24 @@
       cursor: not-allowed;
       border-color: #333;
     }
+
+    /* Estilo estilizado para el botón de cerrar sesión en admin */
+    .btn-logout-admin {
+      width: 100%;
+      margin-top: 15px;
+      background-color: #d9534f;
+      border: 1px solid #b52b27;
+    }
+
+    .btn-logout-admin:hover {
+      background-color: #c9302c;
+    }
   </style>
 </head>
 <body>
-
   <!-- PANTALLA PRINCIPAL ADMIN -->
   <div class="screen active">
+    
     <div class="menu-card admin-card">
       
       <div class="admin-header">
@@ -147,74 +161,105 @@
 
       <p id="admin-system-msg" class="status-message" style="margin-top: 15px; min-height: 18px;"></p>
 
+      <!-- BOTÓN CERRAR SESIÓN ESTILIZADO -->
+      <button id="btn-logout-admin" class="btn-option btn-back btn-logout-admin" onclick="logoutAdmin()">
+        CERRAR SESIÓN
+      </button>
+
     </div>
+
   </div>
 
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-<script>
-  // Detecta si estás probando en PC o en Render
-  const SERVER_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://localhost:3000'
-    : 'https://juego-en-desarrollo.onrender.com';
+  <script>
+    // 1. Obtener el token guardado en el login
+    const token = localStorage.getItem('token');
 
-  const socket = io(SERVER_URL);
-
-  const playerCountEl = document.getElementById('player-count');
-  const playersListEl = document.getElementById('admin-players-list');
-  const btnStartEvent = document.getElementById('btn-start-event');
-  const eventStatusEl = document.getElementById('event-status');
-  const systemMsgEl = document.getElementById('admin-system-msg');
-
-  // Al conectar, registrarse explícitamente como administrador
-  socket.on('connect', () => {
-    systemMsgEl.textContent = 'Conectado al servidor como Administrador.';
-    socket.emit('registerAdmin');
-  });
-
-  // Escuchar actualización constante de jugadores en la sala de espera
-  socket.on('updateSpecialEventLobby', (players) => {
-    playerCountEl.textContent = players.length;
-    playersListEl.innerHTML = '';
-
-    if (players.length === 0) {
-      const emptyLi = document.createElement('li');
-      emptyLi.textContent = 'Sin jugadores en espera...';
-      emptyLi.style.color = '#888';
-      playersListEl.appendChild(emptyLi);
-    } else {
-      players.forEach((player, index) => {
-        const li = document.createElement('li');
-        li.innerHTML = `
-          <span><b>#${index + 1}</b> ${player.name}</span>
-          <span class="player-id-tag">ID: ${player.id.substring(0, 6)}...</span>
-        `;
-        playersListEl.appendChild(li);
-      });
+    // Redirigir al inicio si no hay token
+    if (!token) {
+      alert('Debes iniciar sesión como administrador.');
+      window.location.href = 'index.html';
     }
 
-    // Habilitar botón si hay al menos 2 jugadores listos
-    btnStartEvent.disabled = players.length < 2;
-  });
-
-  // Escuchar si el torneo ya fue iniciado
-  socket.on('specialEventStartedSuccess', () => {
-    eventStatusEl.textContent = 'EN CURSO';
-    eventStatusEl.style.color = '#00e5ff';
-    systemMsgEl.textContent = '¡Torneo lanzado con éxito! Las llaves han sido distribuidas.';
-    btnStartEvent.disabled = true;
-  });
-
-  // Evento del botón para iniciar el torneo
-  btnStartEvent.addEventListener('click', () => {
-    if (confirm('¿Deseas iniciar el Evento Especial con los jugadores conectados?')) {
-      systemMsgEl.textContent = 'Iniciando evento... Generando cuadro eliminatorio.';
-      socket.emit('adminStartSpecialEvent');
+    // --- FUNCIÓN PARA CERRAR SESIÓN DESDE ADMIN ---
+    function logoutAdmin() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('usuario');
+      window.location.href = 'index.html';
     }
-  });
 
-  socket.on('disconnect', () => {
-    systemMsgEl.textContent = 'Conexión perdida con el servidor. Reconectando...';
-  });
-</script>
+    // Detecta host
+    const SERVER_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:3000'
+      : 'https://juego-en-desarrollo.onrender.com';
+
+    // 2. Conectar Socket.io enviando el token para seguridad
+    const socket = io(SERVER_URL, {
+      auth: { token: token }
+    });
+
+    const playerCountEl = document.getElementById('player-count');
+    const playersListEl = document.getElementById('admin-players-list');
+    const btnStartEvent = document.getElementById('btn-start-event');
+    const eventStatusEl = document.getElementById('event-status');
+    const systemMsgEl = document.getElementById('admin-system-msg');
+
+    // Al conectar, registrarse como administrador
+    socket.on('connect', () => {
+      systemMsgEl.textContent = 'Conectado al servidor como Administrador.';
+      socket.emit('registerAdmin');
+    });
+
+    // Error de permisos o autenticación
+    socket.on('connect_error', (err) => {
+      alert('Error de acceso: ' + err.message);
+      window.location.href = 'index.html';
+    });
+
+    // Escuchar actualización constante de jugadores
+    socket.on('updateSpecialEventLobby', (players) => {
+      playerCountEl.textContent = players.length;
+      playersListEl.innerHTML = '';
+
+      if (players.length === 0) {
+        const emptyLi = document.createElement('li');
+        emptyLi.textContent = 'Sin jugadores en espera...';
+        emptyLi.style.color = '#888';
+        playersListEl.appendChild(emptyLi);
+      } else {
+        players.forEach((player, index) => {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <span><b>#${index + 1}</b> ${player.name}</span>
+            <span class="player-id-tag">ID: ${player.id.substring(0, 6)}...</span>
+          `;
+          playersListEl.appendChild(li);
+        });
+      }
+
+      btnStartEvent.disabled = players.length < 2;
+    });
+
+    // Confirmación de inicio
+    socket.on('specialEventStartedSuccess', () => {
+      eventStatusEl.textContent = 'EN CURSO';
+      eventStatusEl.style.color = '#00e5ff';
+      systemMsgEl.textContent = '¡Torneo lanzado con éxito! Las llaves han sido distribuidas.';
+      btnStartEvent.disabled = true;
+    });
+
+    // Iniciar torneo
+    btnStartEvent.addEventListener('click', () => {
+      if (confirm('¿Deseas iniciar el Evento Especial con los jugadores conectados?')) {
+        systemMsgEl.textContent = 'Iniciando evento... Generando cuadro eliminatorio.';
+        socket.emit('adminStartSpecialEvent');
+      }
+    });
+
+    socket.on('disconnect', () => {
+      systemMsgEl.textContent = 'Conexión perdida con el servidor. Reconectando...';
+    });
+  </script>
+
 </body>
 </html>

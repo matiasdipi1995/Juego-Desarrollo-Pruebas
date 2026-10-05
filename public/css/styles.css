@@ -13,7 +13,172 @@ body {
   align-items: center;
   min-height: 100vh;
   min-height: 100dvh; /* Adapta exacto el viewport en navegadores móviles */
+} 
+
+/* Botón flotante en la esquina superior */
+.btn-return-menu {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  z-index: 1000;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: bold;
+  color: #fff;
+  background-color: rgba(217, 83, 79, 0.8);
+  border: 1px solid #b52b27;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
+
+.btn-return-menu:hover {
+  background-color: #d9534f;
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(217, 83, 79, 0.6);
+}
+/* Estilos del modal y tarjetas de Autenticación */
+.auth-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.auth-card {
+  background: #1a1a2e;
+  padding: 30px 40px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  color: #ffffff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.auth-card h2 {
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+}
+
+.input-group {
+  margin-bottom: 15px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: #252542;
+  color: #fff;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: #e94560;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  background: #e94560;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  margin-top: 10px;
+}
+
+.btn-primary:hover {
+  background: #ff2e63;
+}
+
+.auth-switch {
+  margin-top: 18px;
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+.auth-switch a {
+  color: #00adb5;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.auth-switch a:hover {
+  text-decoration: underline;
+}
+
+.auth-error-msg {
+  background: rgba(233, 69, 96, 0.2);
+  border: 1px solid #e94560;
+  color: #ff6b6b;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 15px;
+}
+.auth-modal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.auth-box {
+    background: #1e1e2f;
+    color: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    width: 320px;
+    text-align: center;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+}
+
+.auth-box input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    border: 1px solid #444;
+    background: #2b2b3d;
+    color: #fff;
+    box-sizing: border-box;
+}
+
+.auth-box button {
+    width: 100%;
+    padding: 10px;
+    background: #e63946;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.auth-box a { color: #48cae4; text-decoration: none; }
+.error-msg { color: #ff4d4d; margin-top: 10px; font-size: 14px; }
+
 
 .game-container {
   display: flex;
