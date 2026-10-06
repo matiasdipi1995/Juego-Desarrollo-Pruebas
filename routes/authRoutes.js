@@ -91,7 +91,7 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ error: 'Credenciales inválidas.' });
         }
 
-        const secretKey = process.env.JWT_SECRET || 'secreto_super_seguro';
+        const secretKey = process.env.JWT_SECRET || 'clave_super_secreta';
         const token = jwt.sign(
             { id: usuario.id, username: usuario.username, role: usuario.role },
             secretKey,
