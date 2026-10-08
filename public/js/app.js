@@ -1267,16 +1267,34 @@ class Archer extends Character {
   }
 
   draw() {
+    // 1. Dibujar el cuerpo base del personaje
     super.draw();
 
-    // Visual del personaje (Sombrero de arquero)
-    ctx.fillStyle = '#1b5e20';
-    ctx.fillRect(this.x - 2, this.y - 12, this.width + 4, 10);
-    ctx.fillStyle = '#b71c1c'; // Pluma roja
-    const featherX = this.direction === 1 ? this.x + 4 : this.x + this.width - 8;
-    ctx.fillRect(featherX, this.y - 22, 4, 10);
+    // 2. Definir dimensiones y posición del sombrero de arquero (Robin Hood)
+    ctx.fillStyle = '#1b5e20'; // Verde oscuro para el ala/copa del sombrero
+    
+    // Base/Ala del sombrero justo sobre la cabeza
+    ctx.fillRect(this.x - 4, this.y - 10, this.width + 8, 10);
 
-    // Renderizar flechas activas y especial
+    // Copa del sombrero (parte superior cónica/triangular)
+    ctx.beginPath();
+    ctx.moveTo(this.x - 4, this.y - 10);
+    ctx.lineTo(this.x + this.width + 4, this.y - 10);
+    ctx.lineTo(this.x + (this.width / 2), this.y - 24);
+    ctx.closePath();
+    ctx.fill();
+
+    // 3. Pluma roja al costado según la dirección en la que mira
+    ctx.fillStyle = '#b71c1c';
+    const featherX = this.direction === 1 ? this.x + 2 : this.x + this.width - 6;
+    ctx.beginPath();
+    ctx.moveTo(featherX, this.y - 10);
+    ctx.lineTo(featherX + (this.direction * 8), this.y - 28);
+    ctx.lineTo(featherX + (this.direction * 3), String(this.y - 10));
+    ctx.closePath();
+    ctx.fill();
+
+    // 4. Renderizar flechas activas y flecha especial
     this.projectiles.forEach(p => p.draw());
     if (this.specialArrow) {
       this.specialArrow.draw();

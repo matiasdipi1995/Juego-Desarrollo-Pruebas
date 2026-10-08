@@ -99,7 +99,7 @@ class Arrow {
     this.y = y;
     this.width = 25;
     this.height = 4;
-    this.speed = 12;
+    this.speed = 6;
     this.direction = direction; // 1: derecha, -1: izquierda
     this.damage = 25;
     this.active = true;
@@ -562,10 +562,35 @@ class Archer extends Character {
 
   draw() {
     ctx.save();
+
+    // 1. Cuerpo base del Arquero
     ctx.fillStyle = this.isHit ? '#ffffff' : this.color;
     ctx.fillRect(this.x, this.y, this.width, this.height);
 
-    // Arco
+    // 2. SOMBRERO DE ARQUERO (Robin Hood)
+    // Ala del sombrero
+    ctx.fillStyle = '#1b5e20';
+    ctx.fillRect(this.x - 4, this.y - 8, this.width + 8, 8);
+
+    // Copa del sombrero (triangular)
+    ctx.beginPath();
+    ctx.moveTo(this.x - 4, this.y - 8);
+    ctx.lineTo(this.x + this.width + 4, this.y - 8);
+    ctx.lineTo(this.x + (this.width / 2), this.y - 24);
+    ctx.closePath();
+    ctx.fill();
+
+    // Pluma roja inclinada hacia atrás según la dirección
+    ctx.fillStyle = '#b71c1c';
+    const featherX = this.direction === 1 ? this.x + 4 : this.x + this.width - 8;
+    ctx.beginPath();
+    ctx.moveTo(featherX, this.y - 8);
+    ctx.lineTo(featherX - (this.direction * 6), this.y - 26);
+    ctx.lineTo(featherX + (this.direction * 4), this.y - 8);
+    ctx.closePath();
+    ctx.fill();
+
+    // 3. Arco
     ctx.strokeStyle = '#8b5a2b';
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -573,12 +598,15 @@ class Archer extends Character {
     ctx.arc(bowX, this.y + 35, 20, -Math.PI / 2, Math.PI / 2, this.direction === -1);
     ctx.stroke();
 
+    // Escudo/Defensa
     if (this.isDefending) {
       ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
       ctx.fillRect(this.x - 5, this.y - 5, this.width + 10, this.height + 10);
     }
+
     ctx.restore();
 
+    // Proyectiles
     this.arrows.forEach(a => a.draw());
     this.bigArrows.forEach(ba => ba.draw());
   }
@@ -992,17 +1020,51 @@ class ArcherBot extends Character {
 
   draw() {
     ctx.save();
+
+    // 1. Cuerpo base del Arquero
     ctx.fillStyle = this.isHit ? '#ffffff' : this.color;
     ctx.fillRect(this.x, this.y, this.width, this.height);
 
+    // 2. SOMBRERO DE ARQUERO (Robin Hood)
+    // Ala del sombrero
+    ctx.fillStyle = '#1b5e20';
+    ctx.fillRect(this.x - 4, this.y - 8, this.width + 8, 8);
+
+    // Copa del sombrero (triangular)
+    ctx.beginPath();
+    ctx.moveTo(this.x - 4, this.y - 8);
+    ctx.lineTo(this.x + this.width + 4, this.y - 8);
+    ctx.lineTo(this.x + (this.width / 2), this.y - 24);
+    ctx.closePath();
+    ctx.fill();
+
+    // Pluma roja inclinada hacia atrás según la dirección
+    ctx.fillStyle = '#b71c1c';
+    const featherX = this.direction === 1 ? this.x + 4 : this.x + this.width - 8;
+    ctx.beginPath();
+    ctx.moveTo(featherX, this.y - 8);
+    ctx.lineTo(featherX - (this.direction * 6), this.y - 26);
+    ctx.lineTo(featherX + (this.direction * 4), this.y - 8);
+    ctx.closePath();
+    ctx.fill();
+
+    // 3. Arco
     ctx.strokeStyle = '#8b5a2b';
     ctx.lineWidth = 3;
     ctx.beginPath();
     const bowX = this.direction === 1 ? this.x + this.width + 5 : this.x - 5;
     ctx.arc(bowX, this.y + 35, 20, -Math.PI / 2, Math.PI / 2, this.direction === -1);
     ctx.stroke();
+
+    // Escudo/Defensa
+    if (this.isDefending) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.fillRect(this.x - 5, this.y - 5, this.width + 10, this.height + 10);
+    }
+
     ctx.restore();
 
+    // Proyectiles
     this.arrows.forEach(a => a.draw());
     this.bigArrows.forEach(ba => ba.draw());
   }

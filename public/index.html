@@ -23,7 +23,7 @@
 
       <div class="menu-options">
         <button class="btn-option" onclick="openFreePlayModal()">1 vs 1 Online</button>
-        <button class="btn-option" onclick="location.href='local_game.html'">Partida en una sola pantalla</button>
+        <button class="btn-option" onclick="location.href='select_local.html'">Partida en una sola pantalla</button>
         <button class="btn-option" onclick="startVsBot()">1 vs Máquina</button>
         <button class="btn-option" onclick="openTournamentModal()">Torneo en Red Local</button>
         <button id="btn-special-event" class="btn-option" onclick="openSpecialEventModal()">Evento Especial</button>
@@ -210,14 +210,6 @@
   </script>
   <script src="js/menu.js"></script>
   <script src="js/app.js"></script>
-
-<!-- Cambios Realizados post inclusión del arquero:
-
-    Ajuste de IDs en la UI: Se reemplazaron IDs fijos por clase (#warrior-hp, #mage-hp) a genéricos por número de jugador (#p1-hp, #p2-hp, #p1-mana, #p2-mana), lo que permite manipular dinámicamente las barras desde el JS sin importar si la pelea es Guerrero vs Arquero o Mago vs Arquero.
-
-    Inclusión del Arquero en la Selección: Agregada la tarjeta #card-archer con la llamada selectPlayerChar('archer') y su avatar correspondiente (archer-avatar).
-
- -->
 
 
 </body>

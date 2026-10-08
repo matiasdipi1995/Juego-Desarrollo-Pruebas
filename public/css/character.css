@@ -59,16 +59,31 @@ body {
   box-shadow: 0 0 15px #ff9800;
   background: #2a2a3d;
 }
-
 .char-avatar {
   width: 60px;
   height: 80px;
   margin: 0 auto 10px auto;
   border-radius: 6px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
-.warrior-avatar { background: #ff4444; }
-.mage-avatar { background: #4488ff; }
+/* Colores de fondo base / placeholders */
+.warrior-avatar { 
+  background-color: #ff4444; 
+}
+
+.mage-avatar { 
+  background-color: #4488ff; 
+}
+
+/* Avatar del Arquero */
+.archer-avatar {
+  background-color: #2e7d32; /* Color verde mientras cargás la imagen */
+  /* Si ya tenés la imagen en assets, descomentá la línea de abajo: */
+  /* background-image: url('../assets/characters/archer.png'); */
+}
 
 .char-card h3 { margin: 5px 0; }
 .char-card p { font-size: 12px; color: #aaa; margin: 0; }

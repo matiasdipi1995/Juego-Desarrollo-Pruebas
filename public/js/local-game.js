@@ -1,6 +1,6 @@
-//ESTE ES EL MODO DE JUEGO 1 VS 1 (PERSONA VS PERSONA)
-
-
+// ==========================================
+// MODO DE JUEGO 1 VS 1 (LOCAL / MISMA PC)
+// ==========================================
 
 // --- BLOQUEO DE DISPOSITIVOS MÓVILES ---
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -22,30 +22,34 @@ const bgMusic = new Audio('sonido/sonidoJugando.flac');
 bgMusic.loop = true;
 bgMusic.volume = 0.3;
 
-// --- VARIABLES GLOBALES ---
+const archerBasicAttackSFX = new Audio('sonido/AtaquedelMago.wav'); 
+const archerSpecialSFX = new Audio('sonido/SoltarCargaMago.wav');
+
+// --- VARIABLES GLOBALES Y ELEMENTOS DEL CANVAS ---
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const keys = {};
 
 let roundActive = false;
-//let scores = { warrior: 0, mage: 0 }; COMENTO ESTA VARIABLE PORQUE LA DECLARO MÁS ABAJO, EN LUGAR DE DECLARAR WARRIOR O MAGE DECLARO PLAYER 1 O 2 PARA MÁS FLEXIBILIDAD
 let countdownValue = null;
+let gameLoopId = null;
 
 window.addEventListener('keydown', e => keys[e.code] = true);
 window.addEventListener('keyup', e => keys[e.code] = false);
 
-// --- REPRODUCCIÓN DE MÚSICA DE FONDO (Interacción del usuario) ---
-function tryPlayAudio() {
-  if (bgMusic.paused) {
-    bgMusic.play().then(() => {
-      window.removeEventListener('keydown', tryPlayAudio);
-      window.removeEventListener('mousedown', tryPlayAudio);
-    }).catch(e => console.log('Esperando interacción para reprodución:', e));
-  }
-}
+// --- CARGA Y CAMBIO DE FONDO ---
+const backgrounds = [
+  'img/backgrounds/buenosaires.jpg',
+  'img/backgrounds/newyork.jpg',
+  'img/backgrounds/tokyo.jpg'
+];
 
-window.addEventListener('keydown', tryPlayAudio);
-window.addEventListener('mousedown', tryPlayAudio);
+let bgImage = new Image();
+
+function changeRandomBackground() {
+  const randomBg = backgrounds[Math.floor(Math.random() * backgrounds.length)];
+  bgImage.src = randomBg;
+}
 
 // --- COLISIONES ---
 function checkRectCollision(r1, r2) {
@@ -60,7 +64,7 @@ function checkCircleRectCollision(c, r) {
   return (dx * dx + dy * dy) < (c.radius * c.radius);
 }
 
-// --- PROYECTILES Y HABILIDADES ---
+// --- CLASES DE PROYECTILES ---
 class Projectile {
   constructor(x, y, dir) {
     this.x = x; this.y = y; this.radius = 10;
@@ -104,353 +108,6 @@ class WarriorBeam {
   }
 }
 
-// --- CLASE BASE ENTIDADES ---
-class Character {
-  constructor(x, y, color, hpId, manaId) {
-    this.startX = x; this.startY = y;
-    this.x = x; this.y = y;
-    this.width = 40; this.height = 70;
-    this.color = color; this.speed = 4;
-    this.direction = 1; 
-    this.maxHp = 300; this.hp = 300;
-    this.maxMana = 100; this.mana = 100;
-    this.hpElement = document.getElementById(hpId);
-    this.manaElement = document.getElementById(manaId);
-    this.isHit = false; this.isDefending = false;
-    this.velocityY = 0; this.gravity = 0.6;
-    this.jumpPower = -12; this.onGround = true;
-  }
-
-  reset() {
-    this.x = this.startX; this.y = this.startY;
-    this.hp = this.maxHp; this.mana = this.maxMana;
-    this.isHit = false; this.isDefending = false;
-    this.velocityY = 0; this.onGround = true;
-    this.updateHpBar();
-    this.updateManaBar();
-  }
-
-  updateHpBar() {
-    if (this.hpElement) {
-      const percentage = Math.max(0, (this.hp / this.maxHp) * 100);
-      this.hpElement.style.width = `${percentage}%`;
-    }
-  }
-
-  updateManaBar() {
-    if (this.manaElement) {
-      const percentage = Math.max(0, (this.mana / this.maxMana) * 100);
-      this.manaElement.style.width = `${percentage}%`;
-    }
-  }
-
-  applyDamage(amount) {
-    const finalDamage = this.isDefending ? amount * 0.2 : amount;
-    this.hp = Math.max(0, this.hp - finalDamage);
-    this.updateHpBar();
-    this.isHit = true;
-    setTimeout(() => this.isHit = false, 100);
-
-    // DENTRO DE LA CLASE Character -> método applyDamage(amount):
-
-        if (this.hp <= 0 && roundActive) {
-          roundActive = false;
-          const winner = (this instanceof Warrior) ? 'Mago' : 'Guerrero';
-          if (winner === 'Guerrero') scores.warrior++;
-          else scores.mage++;
-        
-          setTimeout(() => {
-            // CAMBIO AQUÍ: Evaluamos a >= 3 en lugar de >= 2
-            if (scores.warrior >= 3 || scores.mage >= 3) {
-              alert(`¡Juego Terminado! Ganador final: ${winner.toUpperCase()}`);
-              location.reload();
-            } else {
-              startNewRound();
-            }
-          }, 500);
-        }
-  }
-
-  regenMana() {
-    if (this.mana < this.maxMana) {
-      this.mana = Math.min(this.maxMana, this.mana + 0.15);
-      this.updateManaBar();
-    }
-  }
-
-  draw() {
-    ctx.fillStyle = this.isHit ? '#ffffff' : this.color;
-    ctx.fillRect(this.x, this.y, this.width, this.height);
-    if (this.isDefending) {
-      ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 4;
-      ctx.strokeRect(this.x - 2, this.y - 2, this.width + 4, this.height + 4);
-    }
-  }
-}
-
-// --- GUERRERO  ---
-class Warrior extends Character {
-  constructor(x, y) {
-    super(x, y, '#ff4444', 'warrior-hp', 'warrior-mana');
-    this.isAttacking = false; 
-    this.attackDamage = 20; 
-    this.hasDealtDamage = false;
-    this.canAttack = true;
-    this.attackCooldown = 500;
-    this.chargeTime = 0;
-    this.isCharging = false;
-    this.activeBeam = null;
-  }
-
-  reset() {
-    super.reset();
-    this.chargeTime = 0;
-    this.isCharging = false;
-    this.activeBeam = null;
-    this.isAttacking = false;
-  }
-
-  update(opponent) {
-    this.regenMana();
-    if (roundActive) {
-      const pressingDefense = keys['KeyS'] || false;
-      if (pressingDefense && !this.isDefending) {
-        defenseSFX.currentTime = 0;
-        defenseSFX.play().catch(e => console.log(e));
-      }
-      this.isDefending = pressingDefense;
-
-      if (!this.isDefending) {
-        if (keys['KeyA'] && this.x > 0) { this.x -= this.speed; this.direction = -1; }
-        if (keys['KeyD'] && this.x + this.width < canvas.width) { this.x += this.speed; this.direction = 1; }
-        if (keys['KeyW'] && this.onGround) { this.velocityY = this.jumpPower; this.onGround = false; }
-
-        // --- Habilidad Especial E (Carga automática de 2s) ---
-        if (keys['KeyE'] && this.mana >= 100 && !this.isCharging) {
-          this.isCharging = true;
-          this.chargeTime = 0;
-          this.mana = 0;
-          this.updateManaBar();
-        }
-
-        if (this.isCharging) {
-          this.chargeTime += 0.016;
-
-          if (this.chargeTime >= 2.0) {
-            const spawnX = this.direction === 1 ? this.x + this.width : this.x;
-            const spawnY = this.y + (this.height / 2);
-            this.activeBeam = new WarriorBeam(spawnX, spawnY, this.direction, 1);
-            
-            warriorBeamSFX.currentTime = 0;
-            warriorBeamSFX.play().catch(e => console.log(e));
-
-            this.isCharging = false;
-            this.chargeTime = 0;
-          }
-        }
-
-        // --- Ataque Básico Espacio ---
-        if (keys['Space'] && !this.isAttacking && this.canAttack) {
-          this.isAttacking = true;
-          this.hasDealtDamage = false;
-          this.canAttack = false;
-          warriorBasicAttackSFX.currentTime = 0;
-          warriorBasicAttackSFX.play().catch(e => console.log(e));
-          setTimeout(() => this.isAttacking = false, 200);
-          setTimeout(() => this.canAttack = true, this.attackCooldown);
-        }
-      }
-
-      // Física
-      this.velocityY += this.gravity;
-      this.y += this.velocityY;
-      if (this.y >= 300) { this.y = 300; this.velocityY = 0; this.onGround = true; }
-
-      // Colisión de Ataque
-      if (this.isAttacking && !this.hasDealtDamage) {
-        const swordBox = {
-          x: this.direction === 1 ? this.x + this.width : this.x - 45,
-          y: this.y + 20, width: 45, height: 15
-        };
-        if (checkRectCollision(swordBox, opponent)) {
-          opponent.applyDamage(this.attackDamage);
-          this.hasDealtDamage = true;
-        }
-      }
-    }
-
-    // Rayo Láser
-    if (this.activeBeam) {
-      this.activeBeam.update();
-      if (this.activeBeam.active && !this.activeBeam.hasDealtDamage && roundActive) {
-        const beamBox = {
-          x: this.direction === 1 ? this.activeBeam.x : 0,
-          y: this.activeBeam.y - this.activeBeam.height / 2,
-          width: this.direction === 1 ? (canvas.width - this.activeBeam.x) : this.activeBeam.x,
-          height: this.activeBeam.height
-        };
-        if (checkRectCollision(beamBox, opponent)) {
-          opponent.applyDamage(this.activeBeam.damage);
-          this.activeBeam.hasDealtDamage = true;
-        }
-      }
-    }
-  }
-
-  draw() {
-    super.draw();
-    // Casco
-    ctx.fillStyle = '#78909c';
-    ctx.fillRect(this.x - 4, this.y - 24, this.width + 8, 28);
-    ctx.fillStyle = '#1a237e';
-    const visorX = this.direction === 1 ? this.x + 10 : this.x + 2;
-    ctx.fillRect(visorX, this.y - 12, this.width - 12, 8);
-    ctx.fillStyle = '#b71c1c';
-    ctx.fillRect(this.x + (this.width / 2) - 6, this.y - 36, 12, 12);
-
-    if (this.isAttacking) {
-      ctx.fillStyle = '#ffeb3b';
-      const swordX = this.direction === 1 ? this.x + this.width : this.x - 45;
-      ctx.fillRect(swordX, this.y + 20, 45, 15);
-    }
-
-    if (this.isCharging) {
-      ctx.fillStyle = this.chargeTime >= 1.5 ? '#ff1100' : '#ff9900';
-      ctx.beginPath();
-      ctx.arc(this.x + this.width / 2, this.y + this.height / 2, 18 + Math.random() * 6, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    if (this.activeBeam && this.activeBeam.active) {
-      this.activeBeam.draw();
-    }
-  }
-}
-
-// --- MAGO  ---
-class Mage extends Character {
-  constructor(x, y) {
-    super(x, y, '#4488ff', 'mage-hp', 'mage-mana');
-    this.direction = -1; 
-    this.projectiles = []; 
-    this.canAttack = true;
-    this.attackCooldown = 600;
-    this.isDashing = false;
-    this.dashSpeed = 22;
-    this.dashTargetX = 0;
-    this.hoverOffset = 0;
-  }
-
-  shootProjectile() {
-    const spawnX = this.direction === 1 ? this.x + this.width : this.x;
-    this.projectiles.push(new Projectile(spawnX, this.y + 30, this.direction));
-  }
-
-  triggerDash(dir) {
-    this.isDashing = true;
-    const dashDistance = (canvas.width / 2) * dir;
-    this.dashTargetX = Math.max(0, Math.min(canvas.width - this.width, this.x + dashDistance));
-  }
-
-  update(opponent) {
-    this.regenMana();
-    this.hoverOffset = Math.sin(Date.now() / 200) * 4;
-
-    if (roundActive) {
-      const pressingDefense = keys['ArrowDown'] || false;
-      if (pressingDefense && !this.isDefending) {
-        defenseSFX.currentTime = 0;
-        defenseSFX.play().catch(e => console.log(e));
-      }
-      this.isDefending = pressingDefense;
-
-      if (!this.isDefending && !this.isDashing) {
-        if (keys['ArrowLeft'] && this.x > 0) { this.x -= this.speed; this.direction = -1; }
-        if (keys['ArrowRight'] && this.x + this.width < canvas.width) { this.x += this.speed; this.direction = 1; }
-        if (keys['ArrowUp'] && this.onGround) { this.velocityY = this.jumpPower; this.onGround = false; }
-
-        // Ataque Básico Enter
-        if (keys['Enter'] && this.canAttack) {
-          this.shootProjectile();
-          mageBasicAttackSFX.currentTime = 0;
-          mageBasicAttackSFX.play().catch(e => console.log(e));
-          this.canAttack = false;
-          setTimeout(() => this.canAttack = true, this.attackCooldown);
-        }
-
-        // Habilidad Especial M / ShiftRight
-        if ((keys['ShiftRight'] || keys['KeyM']) && this.mana >= 100) {
-          this.mana = 0;
-          this.updateManaBar();
-          this.triggerDash(this.direction);
-          mageBeamSFX.currentTime = 0;
-          mageBeamSFX.play().catch(e => console.log(e));
-        }
-      }
-
-      // Física
-      this.velocityY += this.gravity;
-      this.y += this.velocityY;
-      if (this.y >= 288) { this.y = 288; this.velocityY = 0; this.onGround = true; }
-
-      // Dash
-      if (this.isDashing) {
-        this.x += this.dashSpeed * this.direction;
-        if (checkRectCollision(this, opponent)) {
-          opponent.applyDamage(120);
-          this.isDashing = false;
-        }
-        if ((this.direction === 1 && this.x >= this.dashTargetX) || 
-            (this.direction === -1 && this.x <= this.dashTargetX) ||
-            this.x <= 0 || this.x + this.width >= canvas.width) {
-          this.isDashing = false;
-        }
-      }
-    }
-
-    // Proyectiles
-    this.projectiles.forEach(p => {
-      p.update();
-      if (p.active && checkCircleRectCollision(p, opponent)) {
-        if (roundActive) opponent.applyDamage(p.damage);
-        p.active = false;
-      }
-    });
-    this.projectiles = this.projectiles.filter(p => p.active);
-  }
-
-  draw() {
-    const drawY = this.onGround ? this.y + this.hoverOffset : this.y;
-    const savedY = this.y;
-    if (this.onGround) this.y += this.hoverOffset;
-    super.draw();
-    this.y = savedY;
-
-    // Sombrero
-    ctx.fillStyle = '#0d47a1';
-    ctx.fillRect(this.x - 8, drawY - 4, this.width + 16, 6);
-    ctx.fillStyle = '#ffd54f';
-    ctx.fillRect(this.x + 2, drawY - 10, this.width - 4, 6);
-    ctx.fillStyle = '#1565c0';
-    ctx.beginPath();
-    ctx.moveTo(this.x, drawY - 10);
-    ctx.lineTo(this.x + this.width, drawY - 10);
-    ctx.lineTo(this.x + (this.width / 2), drawY - 32);
-    ctx.closePath();
-    ctx.fill();
-
-    if (this.isDashing) {
-      ctx.fillStyle = '#00e5ff';
-      const trailY = this.onGround ? this.y + this.hoverOffset : this.y;
-      ctx.fillRect(this.x - (15 * this.direction), trailY, this.width + 15, this.height);
-    }
-    this.projectiles.forEach(p => p.draw());
-  }
-}
-
-// ARQUERO - NUEVA CLASE
-
-// --- PROYECTILES Y HABILIDADES DEL ARQUERO ---
 class ArrowProjectile {
   constructor(x, y, dir, damage = 35) {
     this.x = x; this.y = y; this.dir = dir;
@@ -484,8 +141,8 @@ class ArrowProjectile {
 class ArcherBigArrow {
   constructor(x, y, dir, damage) {
     this.x = x; this.y = y; this.dir = dir;
-    this.speed = 18 * dir; // Desplazamiento horizontal rápido
-    this.damage = damage;  // 65% del HP max del rival
+    this.speed = 18 * dir;
+    this.damage = damage;
     this.width = 75; this.height = 20;
     this.active = true;
     this.hasDealtDamage = false;
@@ -517,15 +174,328 @@ class ArcherBigArrow {
   }
 }
 
-// --- ARQUERO ---
+// --- CLASE BASE DE PERSONAJES ---
+class Character {
+  constructor(x, y, color, hpId, manaId) {
+    this.startX = x; this.startY = y;
+    this.x = x; this.y = y;
+    this.width = 65;   // Antes: 40 (Ahora más anchos)
+    this.height = 120;  // Antes: 70 (Ahora más altos)
+    this.color = color; this.speed = 4.5;
+    this.direction = 1; 
+    this.maxHp = 700; this.hp = 700;
+    this.maxMana = 100; this.mana = 100;
+    this.hpElement = document.getElementById(hpId);
+    this.manaElement = document.getElementById(manaId);
+    this.isHit = false; this.isDefending = false;
+    this.velocityY = 0; this.gravity = 0.6;
+    this.jumpPower = -14; // Aumentado ligeramente de -12 a -14 para compensar la masa
+    this.onGround = true;
+  }
+
+  reset() {
+    this.x = this.startX; this.y = this.startY;
+    this.hp = this.maxHp; this.mana = this.maxMana;
+    this.isHit = false; this.isDefending = false;
+    this.velocityY = 0; this.onGround = true;
+  }
+
+  applyDamage(amount) {
+    const finalDamage = this.isDefending ? amount * 0.2 : amount;
+    this.hp = Math.max(0, this.hp - finalDamage);
+    this.isHit = true;
+    setTimeout(() => this.isHit = false, 100);
+  }
+
+  regenMana() {
+    if (this.mana < this.maxMana) {
+      this.mana = Math.min(this.maxMana, this.mana + 0.15);
+    }
+  }
+
+  draw() {
+    ctx.fillStyle = this.isHit ? '#ffffff' : this.color;
+    ctx.fillRect(this.x, this.y, this.width, this.height);
+    if (this.isDefending) {
+      ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 4;
+      ctx.strokeRect(this.x - 2, this.y - 2, this.width + 4, this.height + 4);
+    }
+  }
+}
+
+// --- SUBCLASES DE PERSONAJES ---
+class Warrior extends Character {
+  constructor(x, y, hpId = 'p1-hp', manaId = 'p1-mana') {
+    super(x, y, '#ff4444', hpId, manaId);
+    this.isAttacking = false; 
+    this.attackDamage = 20; 
+    this.hasDealtDamage = false;
+    this.canAttack = true;
+    this.attackCooldown = 500;
+    this.chargeTime = 0;
+    this.isCharging = false;
+    this.activeBeam = null;
+  }
+
+  reset() {
+    super.reset();
+    this.chargeTime = 0;
+    this.isCharging = false;
+    this.activeBeam = null;
+    this.isAttacking = false;
+  }
+
+  update(opponent) {
+    this.regenMana();
+    if (roundActive) {
+      const isP1 = this.startX < 500;
+      const pressingDefense = isP1 ? keys['KeyS'] : keys['ArrowDown'];
+      
+      if (pressingDefense && !this.isDefending) {
+        defenseSFX.currentTime = 0;
+        defenseSFX.play().catch(e => console.log(e));
+      }
+      this.isDefending = pressingDefense || false;
+
+      if (!this.isDefending) {
+        const leftKey = isP1 ? keys['KeyA'] : keys['ArrowLeft'];
+        const rightKey = isP1 ? keys['KeyD'] : keys['ArrowRight'];
+        const jumpKey = isP1 ? keys['KeyW'] : keys['ArrowUp'];
+        const attackKey = isP1 ? keys['Space'] : keys['Enter'];
+        const specialKey = isP1 ? keys['KeyE'] : (keys['ShiftRight'] || keys['KeyM']);
+
+        if (leftKey && this.x > 0) { this.x -= this.speed; this.direction = -1; }
+        if (rightKey && this.x + this.width < canvas.width) { this.x += this.speed; this.direction = 1; }
+        if (jumpKey && this.onGround) { this.velocityY = this.jumpPower; this.onGround = false; }
+
+        if (specialKey && this.mana >= 100 && !this.isCharging) {
+          this.isCharging = true;
+          this.chargeTime = 0;
+          this.mana = 0;
+        }
+
+        if (this.isCharging) {
+          this.chargeTime += 0.016;
+          if (this.chargeTime >= 2.0) {
+            const spawnX = this.direction === 1 ? this.x + this.width : this.x;
+            const spawnY = this.y + (this.height / 2);
+            this.activeBeam = new WarriorBeam(spawnX, spawnY, this.direction, 1);
+            
+            warriorBeamSFX.currentTime = 0;
+            warriorBeamSFX.play().catch(e => console.log(e));
+
+            this.isCharging = false;
+            this.chargeTime = 0;
+          }
+        }
+
+        if (attackKey && !this.isAttacking && this.canAttack) {
+          this.isAttacking = true;
+          this.hasDealtDamage = false;
+          this.canAttack = false;
+          warriorBasicAttackSFX.currentTime = 0;
+          warriorBasicAttackSFX.play().catch(e => console.log(e));
+          setTimeout(() => this.isAttacking = false, 200);
+          setTimeout(() => this.canAttack = true, this.attackCooldown);
+        }
+      }
+
+      this.velocityY += this.gravity;
+      this.y += this.velocityY;
+      
+      // *** CAMBIO 1: Y ikatu opyta 350-pe ani hag̃ua oñeha'ã yvýpe ***
+      if (this.y >= 350) { this.y = 350; this.velocityY = 0; this.onGround = true; }
+
+      if (this.isAttacking && !this.hasDealtDamage) {
+        // *** CAMBIO 2: Kyse (espada) tuichave reñeikotevẽvape g̃uarã ***
+        const swordBox = {
+          x: this.direction === 1 ? this.x + this.width : this.x - 60,
+          y: this.y + 35, width: 60, height: 25
+        };
+        if (checkRectCollision(swordBox, opponent)) {
+          opponent.applyDamage(this.attackDamage);
+          this.hasDealtDamage = true;
+        }
+      }
+    }
+
+    if (this.activeBeam) {
+      this.activeBeam.update();
+      if (this.activeBeam.active && !this.activeBeam.hasDealtDamage && roundActive) {
+        const beamBox = {
+          x: this.direction === 1 ? this.activeBeam.x : 0,
+          y: this.activeBeam.y - this.activeBeam.height / 2,
+          width: this.direction === 1 ? (canvas.width - this.activeBeam.x) : this.activeBeam.x,
+          height: this.activeBeam.height
+        };
+        if (checkRectCollision(beamBox, opponent)) {
+          opponent.applyDamage(this.activeBeam.damage);
+          this.activeBeam.hasDealtDamage = true;
+        }
+      }
+    }
+}
+
+  draw() {
+    super.draw();
+    ctx.fillStyle = '#78909c';
+    ctx.fillRect(this.x - 4, this.y - 24, this.width + 8, 28);
+    ctx.fillStyle = '#1a237e';
+    const visorX = this.direction === 1 ? this.x + 10 : this.x + 2;
+    ctx.fillRect(visorX, this.y - 12, this.width - 12, 8);
+    ctx.fillStyle = '#b71c1c';
+    ctx.fillRect(this.x + (this.width / 2) - 6, this.y - 36, 12, 12);
+
+    if (this.isAttacking) {
+      ctx.fillStyle = '#ffeb3b';
+      const swordX = this.direction === 1 ? this.x + this.width : this.x - 45;
+      ctx.fillRect(swordX, this.y + 20, 45, 15);
+    }
+
+    if (this.isCharging) {
+      ctx.fillStyle = this.chargeTime >= 1.5 ? '#ff1100' : '#ff9900';
+      ctx.beginPath();
+      ctx.arc(this.x + this.width / 2, this.y + this.height / 2, 18 + Math.random() * 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (this.activeBeam && this.activeBeam.active) {
+      this.activeBeam.draw();
+    }
+  }
+}
+
+class Mage extends Character {
+  constructor(x, y, hpId = 'p2-hp', manaId = 'p2-mana') {
+    super(x, y, '#4488ff', hpId, manaId);
+    this.direction = -1; 
+    this.projectiles = []; 
+    this.canAttack = true;
+    this.attackCooldown = 600;
+    this.isDashing = false;
+    this.dashSpeed = 22;
+    this.dashTargetX = 0;
+    this.hoverOffset = 0;
+  }
+
+  shootProjectile() {
+    const spawnX = this.direction === 1 ? this.x + this.width : this.x;
+    this.projectiles.push(new Projectile(spawnX, this.y + 30, this.direction));
+  }
+
+  triggerDash(dir) {
+    this.isDashing = true;
+    const dashDistance = (canvas.width / 2) * dir;
+    this.dashTargetX = Math.max(0, Math.min(canvas.width - this.width, this.x + dashDistance));
+  }
+
+  update(opponent) {
+    this.regenMana();
+    this.hoverOffset = Math.sin(Date.now() / 200) * 4;
+
+    if (roundActive) {
+      const isP1 = this.startX < 500;
+      const pressingDefense = isP1 ? keys['KeyS'] : keys['ArrowDown'];
+
+      if (pressingDefense && !this.isDefending) {
+        defenseSFX.currentTime = 0;
+        defenseSFX.play().catch(e => console.log(e));
+      }
+      this.isDefending = pressingDefense || false;
+
+      if (!this.isDefending && !this.isDashing) {
+        const leftKey = isP1 ? keys['KeyA'] : keys['ArrowLeft'];
+        const rightKey = isP1 ? keys['KeyD'] : keys['ArrowRight'];
+        const jumpKey = isP1 ? keys['KeyW'] : keys['ArrowUp'];
+        const attackKey = isP1 ? keys['Space'] : keys['Enter'];
+        const specialKey = isP1 ? keys['KeyE'] : (keys['ShiftRight'] || keys['KeyM']);
+
+        if (leftKey && this.x > 0) { this.x -= this.speed; this.direction = -1; }
+        if (rightKey && this.x + this.width < canvas.width) { this.x += this.speed; this.direction = 1; }
+        if (jumpKey && this.onGround) { this.velocityY = this.jumpPower; this.onGround = false; }
+
+        if (attackKey && this.canAttack) {
+          this.shootProjectile();
+          mageBasicAttackSFX.currentTime = 0;
+          mageBasicAttackSFX.play().catch(e => console.log(e));
+          this.canAttack = false;
+          setTimeout(() => this.canAttack = true, this.attackCooldown);
+        }
+
+        if (specialKey && this.mana >= 100) {
+          this.mana = 0;
+          this.triggerDash(this.direction);
+          mageBeamSFX.currentTime = 0;
+          mageBeamSFX.play().catch(e => console.log(e));
+        }
+      }
+
+      this.velocityY += this.gravity;
+      this.y += this.velocityY;
+
+      // Ajustado a 338 para que con el float/hover no pise por debajo del suelo
+      if (this.y >= 338) { this.y = 338; this.velocityY = 0; this.onGround = true; }
+
+      if (this.isDashing) {
+        this.x += this.dashSpeed * this.direction;
+        if (checkRectCollision(this, opponent)) {
+          opponent.applyDamage(120);
+          this.isDashing = false;
+        }
+        if ((this.direction === 1 && this.x >= this.dashTargetX) || 
+            (this.direction === -1 && this.x <= this.dashTargetX) ||
+            this.x <= 0 || this.x + this.width >= canvas.width) {
+          this.isDashing = false;
+        }
+      }
+    }
+
+    this.projectiles.forEach(p => {
+      p.update();
+      if (p.active && checkCircleRectCollision(p, opponent)) {
+        if (roundActive) opponent.applyDamage(p.damage);
+        p.active = false;
+      }
+    });
+    this.projectiles = this.projectiles.filter(p => p.active);
+}
+
+  draw() {
+    const drawY = this.onGround ? this.y + this.hoverOffset : this.y;
+    const savedY = this.y;
+    if (this.onGround) this.y += this.hoverOffset;
+    super.draw();
+    this.y = savedY;
+
+    ctx.fillStyle = '#0d47a1';
+    ctx.fillRect(this.x - 8, drawY - 4, this.width + 16, 6);
+    ctx.fillStyle = '#ffd54f';
+    ctx.fillRect(this.x + 2, drawY - 10, this.width - 4, 6);
+    ctx.fillStyle = '#1565c0';
+    ctx.beginPath();
+    ctx.moveTo(this.x, drawY - 10);
+    ctx.lineTo(this.x + this.width, drawY - 10);
+    ctx.lineTo(this.x + (this.width / 2), drawY - 32);
+    ctx.closePath();
+    ctx.fill();
+
+    if (this.isDashing) {
+      ctx.fillStyle = '#00e5ff';
+      const trailY = this.onGround ? this.y + this.hoverOffset : this.y;
+      ctx.fillRect(this.x - (15 * this.direction), trailY, this.width + 15, this.height);
+    }
+    this.projectiles.forEach(p => p.draw());
+  }
+}
+
 class Archer extends Character {
   constructor(x, y, hpId = 'p1-hp', manaId = 'p1-mana') {
     super(x, y, '#2e7d32', hpId, manaId);
     this.projectiles = [];
     this.specialArrow = null;
     this.canAttack = true;
-    this.attackCooldown = 750; // Más lento que el Mago (600ms)
-    this.basicDamage = 35;      // Más daño base que el Mago/Guerrero
+    this.attackCooldown = 750;
+    this.basicDamage = 35;
   }
 
   reset() {
@@ -542,23 +512,20 @@ class Archer extends Character {
 
   shootSpecial(opponent) {
     const spawnX = this.direction === 1 ? this.x + this.width : this.x;
-    const damage = opponent ? Math.round(opponent.maxHp * 0.65) : 195; // 65% de 300 HP
+    const damage = opponent ? Math.round(opponent.maxHp * 0.15) : 195;
     this.specialArrow = new ArcherBigArrow(spawnX, this.y + 35, this.direction, damage);
   }
 
-  update(opponent) {
+ update(opponent) {
     this.regenMana();
 
     if (roundActive) {
-      // Soporta controles de P1 (WASD) o P2 (Flechas) según el lado
-      const isP1 = this.startX < 400;
+      const isP1 = this.startX < 500;
       const pressingDefense = isP1 ? keys['KeyS'] : keys['ArrowDown'];
       
       if (pressingDefense && !this.isDefending) {
-        if (typeof defenseSFX !== 'undefined') {
-          defenseSFX.currentTime = 0;
-          defenseSFX.play().catch(e => console.log(e));
-        }
+        defenseSFX.currentTime = 0;
+        defenseSFX.play().catch(e => console.log(e));
       }
       this.isDefending = pressingDefense || false;
 
@@ -573,36 +540,29 @@ class Archer extends Character {
         if (rightKey && this.x + this.width < canvas.width) { this.x += this.speed; this.direction = 1; }
         if (jumpKey && this.onGround) { this.velocityY = this.jumpPower; this.onGround = false; }
 
-        // Ataque básico
         if (attackKey && this.canAttack) {
           this.shootArrow();
-          if (typeof archerBasicAttackSFX !== 'undefined') {
-            archerBasicAttackSFX.currentTime = 0;
-            archerBasicAttackSFX.play().catch(e => console.log(e));
-          }
+          archerBasicAttackSFX.currentTime = 0;
+          archerBasicAttackSFX.play().catch(e => console.log(e));
           this.canAttack = false;
           setTimeout(() => this.canAttack = true, this.attackCooldown);
         }
 
-        // Especial (Flecha Grande - 65% HP)
         if (specialKey && this.mana >= 100) {
           this.mana = 0;
-          this.updateManaBar();
           this.shootSpecial(opponent);
-          if (typeof archerSpecialSFX !== 'undefined') {
-            archerSpecialSFX.currentTime = 0;
-            archerSpecialSFX.play().catch(e => console.log(e));
-          }
+          archerSpecialSFX.currentTime = 0;
+          archerSpecialSFX.play().catch(e => console.log(e));
         }
       }
 
-      // Física
       this.velocityY += this.gravity;
       this.y += this.velocityY;
-      if (this.y >= 300) { this.y = 300; this.velocityY = 0; this.onGround = true; }
+
+      // Cambiado de 400 a 350 para ajustar a la nueva altura
+      if (this.y >= 350) { this.y = 350; this.velocityY = 0; this.onGround = true; }
     }
 
-    // Impactos Flecha BÁSICA
     this.projectiles.forEach(p => {
       p.update();
       const pBox = { x: p.x, y: p.y - p.height / 2, width: p.width, height: p.height };
@@ -613,7 +573,6 @@ class Archer extends Character {
     });
     this.projectiles = this.projectiles.filter(p => p.active);
 
-    // Impactos Flecha ESPECIAL
     if (this.specialArrow) {
       this.specialArrow.update();
       const specialBox = { 
@@ -633,11 +592,10 @@ class Archer extends Character {
       }
       if (!this.specialArrow.active) this.specialArrow = null;
     }
-  }
+}
 
   draw() {
     super.draw();
-    // Sombrero de arquero y pluma
     ctx.fillStyle = '#1b5e20';
     ctx.fillRect(this.x - 2, this.y - 12, this.width + 4, 10);
     ctx.fillStyle = '#b71c1c';
@@ -649,17 +607,72 @@ class Archer extends Character {
   }
 }
 
-// BORRÉ LA INSTANCIACIÓN DE MAGO O GUERRERO PORQUE NO ME DABA OPCIONES FUERA DE ESOS DOS, AHORA SERÁ MÁS DINÁMICO ACEPTANDO A LA NUEVA CLASE DE ARQUERO, ESPERO QUE NO SEA UNA CAGADA TODAVÍA NO LA PROBÉ XD
+// --- FÁBRICA DE PERSONAJES ---
+function createCharacter(type, x, y, hpId, manaId) {
+  switch (type) {
+    case 'warrior':
+      return new Warrior(x, y, hpId, manaId);
+    case 'mage':
+      return new Mage(x, y, hpId, manaId);
+    case 'archer':
+      return new Archer(x, y, hpId, manaId);
+    default:
+      return new Warrior(x, y, hpId, manaId);
+  }
+}
 
+// --- LECTURA DE PARÁMETROS EN LA URL ---
+function getQueryParams() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    p1: params.get('p1') || 'warrior',
+    p2: params.get('p2') || 'mage'
+  };
+}
 
-// --- INICIALIZACIÓN DINÁMICA DE JUGADORES ---
-// En lugar de instanciar warrior y mage directamente, creamos player1 y player2
-let player1 = new Warrior(100, 300);
-let player2 = new Mage(660, 300);
+// --- INSTANCIACIÓN DE JUGADORES Y ESTADÍSTICAS ---
+const selectedChars = getQueryParams();
+let player1 = createCharacter(selectedChars.p1, 100, 400, 'p1-hp', 'p1-mana');
+let player2 = createCharacter(selectedChars.p2, 860, 400, 'p2-hp', 'p2-mana');
 
 let scores = { p1: 0, p2: 0 };
 
-// Modificación dentro del método applyDamage en Character o chequeo general
+// --- ACTUALIZACIÓN DE UI EN HTML ---
+const p1HpBar = document.getElementById('p1-hp');
+const p2HpBar = document.getElementById('p2-hp');
+const p1ManaBar = document.getElementById('p1-mana');
+const p2ManaBar = document.getElementById('p2-mana');
+
+function updateUI() {
+  if (!player1 || !player2) return;
+
+  const p1HpPercent = Math.max(0, Math.min(100, (player1.hp / player1.maxHp) * 100));
+  const p2HpPercent = Math.max(0, Math.min(100, (player2.hp / player2.maxHp) * 100));
+
+  if (p1HpBar) p1HpBar.style.width = `${p1HpPercent}%`;
+  if (p2HpBar) p2HpBar.style.width = `${p2HpPercent}%`;
+
+  if (p1ManaBar) {
+    p1ManaBar.style.width = `${Math.max(0, (player1.mana / player1.maxMana) * 100)}%`;
+  }
+  if (p2ManaBar) {
+    p2ManaBar.style.width = `${Math.max(0, (player2.mana / player2.maxMana) * 100)}%`;
+  }
+}
+
+// --- MÚSICA Y SONIDO ---
+function tryPlayAudio() {
+  if (bgMusic.paused) {
+    bgMusic.play().then(() => {
+      window.removeEventListener('keydown', tryPlayAudio);
+      window.removeEventListener('mousedown', tryPlayAudio);
+    }).catch(e => console.log('Esperando interacción:', e));
+  }
+}
+window.addEventListener('keydown', tryPlayAudio);
+window.addEventListener('mousedown', tryPlayAudio);
+
+// --- CONTROL DE RONDAS Y BUCLE PRINCIPAL ---
 function checkVictoryCondition() {
   if (player1.hp <= 0 && roundActive) {
     roundActive = false;
@@ -676,7 +689,7 @@ function handleRoundEnd(winnerName) {
   setTimeout(() => {
     if (scores.p1 >= 3 || scores.p2 >= 3) {
       alert(`¡Juego Terminado! Ganador final: ${winnerName}`);
-      location.reload();
+      window.location.href = "select_local.html";
     } else {
       startNewRound();
     }
@@ -718,6 +731,7 @@ function drawUI() {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
     ctx.font = 'bold 85px Arial';
     ctx.fillText(countdownValue, canvas.width / 2 + 3, canvas.height / 2 + 3);
+
     ctx.fillStyle = '#00e5ff';
     ctx.font = 'bold 80px Arial';
     ctx.fillText(countdownValue, canvas.width / 2, canvas.height / 2);
@@ -731,27 +745,28 @@ function gameLoop() {
     ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
   } else {
     ctx.fillStyle = '#222';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
   }
 
-  ctx.fillStyle = '#444'; 
-  ctx.fillRect(0, 370, canvas.width, 30);
+  // Piso
+  ctx.fillStyle = '#444';
+  ctx.fillRect(0, 470, canvas.width, 30);
 
-  // Actualizar e Intercambiar oponentes
+  // Actualización
   player1.update(player2);
   player2.update(player1);
 
-  // Chequear victorias de ronda
-  checkVictoryCondition();
-
-  // Renderizar
+  // Renderizado
   player1.draw();
   player2.draw();
 
   drawUI();
+  updateUI();
+  checkVictoryCondition();
+
   requestAnimationFrame(gameLoop);
 }
 
-// Inicializar primera ronda y game loop
+// --- INICIO ÚNICO DEL JUEGO ---
 startNewRound();
 requestAnimationFrame(gameLoop);
