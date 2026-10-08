@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Juego de Pelea: 1 vs 1 Local (Misma PC)</title>
+  <title>Juego de Pelea: 1 vs 1 Local</title>
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/local-game.css">
   <style>
@@ -57,32 +57,172 @@
         <div class="player-label" style="color: #ff4444;" id="ui-warrior-name">Guerrero (P1)</div>
         <div class="health-bar-container"><div id="warrior-hp" class="health-bar-fill" style="width: 100%;"></div></div>
         <div class="mana-bar-container"><div id="warrior-mana" class="mana-bar-fill" style="width: 100%;"></div></div>
+  <link rel="stylesheet" href="css/character.css">
+  <style>
+    body.game-body {
+      margin: 0;
+      padding: 0;
+      background: #0f0f15;
+      color: #fff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* BARRAS DE VIDA Y MANÁ SUPERIORES */
+    .top-bar {
+      width: 1000px;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 15px;
+      margin-bottom: 10px;
+      z-index: 10;
+    }
+
+    .player-info {
+      width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .p1-info { align-items: flex-start; }
+    .p2-info { align-items: flex-end; }
+
+    .player-label {
+      font-weight: bold;
+      font-size: 18px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .p1-info .player-label { color: #ff4444; }
+    .p2-info .player-label { color: #4488ff; }
+
+    .bar-container {
+      width: 100%;
+      height: 18px;
+      background-color: #222;
+      border: 2px solid #555;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .mana-container {
+      height: 10px;
+      border-color: #333;
+    }
+
+    .hp-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #ff1744, #ff5252);
+      transition: width 0.1s linear;
+    }
+
+    .mana-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #29b6f6, #00e5ff);
+      transition: width 0.1s linear;
+    }
+
+    /* CONTENEDOR DEL CANVAS (ARENA CON FONDO CONFIGURADO) */
+    .canvas-container {
+      position: relative;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.8);
+      border: 3px solid #333;
+      border-radius: 6px;
+      
+      /* === AQUÍ INGRESAS LA DIRECCIÓN DE TU IMAGEN === */
+      background-image: url('img/backgrounds/main_bg.jpeg'); 
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    #gameCanvas {
+      display: block;
+      /* Mantiene el fondo transparente por si el script no dibuja un fondo sólido */
+      background: transparent; 
+    }
+
+    /* GUÍA DE CONTROLES ABAJO DE LA ARENA */
+    .controls-overlay {
+      width: 1000px;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+      background: rgba(20, 20, 30, 0.85);
+      padding: 10px 20px;
+      border-radius: 6px;
+      box-sizing: border-box;
+      border: 1px solid #333;
+    }
+
+    .controls-column h4 {
+      margin: 0 0 4px 0;
+      font-size: 14px;
+    }
+
+    .controls-column p {
+      margin: 2px 0;
+      font-size: 12px;
+      color: #ccc;
+    }
+
+    .p1-controls h4 { color: #ff6666; }
+    .p2-controls h4 { color: #66a3ff; text-align: right; }
+    .p2-controls p { text-align: right; }
+  </style>
+</head>
+<body class="game-body">
+  
+  <!-- BARRAS DE VIDA Y MANÁ -->
+  <div class="top-bar">
+    <div class="player-info p1-info">
+      <span class="player-label">Jugador 1</span>
+      <div class="bar-container hp-container">
+        <div id="p1-hp" class="bar hp-bar" style="width: 100%;"></div>
       </div>
-      <div style="width: 45%;">
-        <div class="player-label" style="color: #4488ff; text-align: right;" id="ui-mage-name">Mago (P2)</div>
-        <div class="health-bar-container"><div id="mage-hp" class="health-bar-fill" style="width: 100%;"></div></div>
-        <div class="mana-bar-container"><div id="mage-mana" class="mana-bar-fill" style="width: 100%;"></div></div>
+      <div class="bar-container mana-container">
+        <div id="p1-mana" class="bar mana-bar" style="width: 100%;"></div>
       </div>
     </div>
 
-    <!-- CANVAS DEL JUEGO -->
-    <canvas id="gameCanvas" width="800" height="400"></canvas>
-
-    <!-- GUÍA DE CONTROLES EN PANTALLA -->
-    <div class="controls-hint">
-      <div class="hint-col">
-        <b style="color: #ff4444;">P1 Guerrero:</b><br>
-        A/D: Moverse | W: Saltar | S: Defender<br>
-        Espacio: Ataque Básico | E (Mantener): Carga/Rayo
+    <div class="player-info p2-info">
+      <span class="player-label">Jugador 2</span>
+      <div class="bar-container hp-container">
+        <div id="p2-hp" class="bar hp-bar" style="width: 100%;"></div>
       </div>
-      <div class="hint-col right">
-        <b style="color: #4488ff;">P2 Mago:</b><br>
-        Flechas: Moverse / Saltar / Defender<br>
-        Enter: Disparar | M / Shift Der: Dash Especial
+      <div class="bar-container mana-container">
+        <div id="p2-mana" class="bar mana-bar" style="width: 100%;"></div>
       </div>
     </div>
   </div>
 
+  <!-- ARENA DE COMBATE AMPLIADA (1000x500) -->
+  <div class="canvas-container">
+    <canvas id="gameCanvas" width="1000" height="500"></canvas>
+  </div>
+
+  <!-- CONTROLES INFERIORES -->
+  <div class="controls-overlay">
+    <div class="controls-column p1-controls">
+      <h4>P1 (Teclas W / A / S / D):</h4>
+      <p>A / D: Moverse | W: Saltar | S: Defender</p>
+      <p>Espacio: Ataque Básico | E: Habilidad Especial</p>
+    </div>
+    <div class="controls-column p2-controls">
+      <h4>P2 (Teclas Flechas):</h4>
+      <p>Flechas: Moverse / Saltar / Defender</p>
+      <p>Enter: Ataque Básico | Shift Der / M: Habilidad Especial</p>
+    </div>
+  </div>
+
+  <!-- SCRIPT DEL JUEGO -->
   <script src="js/local-game.js"></script>
 
   <!-- LÓGICA DE RETORNO AL MENÚ DE MODOS -->

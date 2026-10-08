@@ -216,7 +216,7 @@ function advanceTournament(tCode) {
     m.p2 && !m.p2.isBye
   );
 
-  console.log(`\n======================================================`);
+console.log(`\n======================================================`);
   console.log(`[TORNEO SERVER] 🏆 Avanzando torneo ${tCode} - Ronda ${t.currentRound}`);
   console.log(`[TORNEO SERVER] Peleas reales listas para lanzar: ${readyMatches.length}`);
   console.log(`======================================================\n`);
@@ -233,14 +233,23 @@ function advanceTournament(tCode) {
       const subRoomCode = `${tCode}_${match.id}`;
       const selectedBg = mapBackgrounds[Math.floor(Math.random() * mapBackgrounds.length)];
 
+      // Roles asignados a cada participante
+      const roleP1 = match.p1.role || 'warrior';
+      const roleP2 = match.p2.role || 'mage';
+
       const matchPlayers = [
-        { id: match.p1.id, name: match.p1.name, role: 'warrior' },
-        { id: match.p2.id, name: match.p2.name, role: 'mage' }
+        { id: match.p1.id, name: match.p1.name, role: roleP1 },
+        { id: match.p2.id, name: match.p2.name, role: roleP2 }
       ];
+
+      // Puntajes iniciales dinámicos según el rol
+      const initialScores = {};
+      initialScores[roleP1] = 0;
+      initialScores[roleP2] = 0;
 
       rooms[subRoomCode] = {
         players: matchPlayers,
-        scores: { warrior: 0, mage: 0 },
+        scores: initialScores,
         bgMap: selectedBg,
         tournamentCode: tCode,
         matchId: match.id
@@ -277,20 +286,20 @@ function advanceTournament(tCode) {
       setTimeout(() => {
         const payloadP1 = {
           roomCode: subRoomCode,
-          role: 'warrior',
+          role: roleP1,
           bgMap: selectedBg,
           opponent: match.p2.name,
           players: matchPlayers,
-          scores: { warrior: 0, mage: 0 }
+          scores: initialScores
         };
 
         const payloadP2 = {
           roomCode: subRoomCode,
-          role: 'mage',
+          role: roleP2,
           bgMap: selectedBg,
           opponent: match.p1.name,
           players: matchPlayers,
-          scores: { warrior: 0, mage: 0 }
+          scores: initialScores
         };
 
         if (socketP1) io.to(match.p1.id).emit('launchMatch', payloadP1);
@@ -369,8 +378,6 @@ function buildNextRound(tCode) {
     console.log(`[TORNEO SERVER] 👑 Campeón del torneo: ${champion.name}`);
 
     // Construimos la lista de posiciones (Standings) ordenada
-    // 1° Campeón
-    // 2° Subcampeón (el perdedor de la final)
     const finalMatch = currentMatches.find(m => m.winner && (m.winner.id === champion.id || m.winner.name === champion.name));
     const runnerUp = finalMatch ? finalMatch.loser : null;
 
@@ -406,7 +413,7 @@ function buildNextRound(tCode) {
     winners.push({ id: null, name: 'BYE', isBye: true });
   }
 
-  // 5. Crear los combates (incluyendo siempre el atributo 'range' para evitar el TypeError)
+  // 5. Crear los combates
   for (let i = 0; i < winners.length; i += 2) {
     const p1 = winners[i];
     const p2 = winners[i + 1];
@@ -419,7 +426,7 @@ function buildNextRound(tCode) {
       nextMatches.push({
         id: matchId,
         round: nextRound,
-        range: [1, 2], // 👈 Fijado para evitar 'TypeError: Cannot read properties of undefined'
+        range: [1, 2],
         p1: p1,
         p2: p2,
         winner: p1,
@@ -431,7 +438,7 @@ function buildNextRound(tCode) {
       nextMatches.push({
         id: matchId,
         round: nextRound,
-        range: [1, 2], // 👈 Fijado
+        range: [1, 2],
         p1: p1,
         p2: p2,
         winner: p2,
@@ -443,7 +450,7 @@ function buildNextRound(tCode) {
       nextMatches.push({
         id: matchId,
         round: nextRound,
-        range: [1, 2], // 👈 Fijado
+        range: [1, 2],
         p1: p1,
         p2: p2,
         winner: null,
@@ -493,36 +500,28 @@ io.use((socket, next) => {
 
 io.on('connection', (socket) => {
   // TEST DE DIAGNÓSTICO
-socket.on('pingTest', (data) => {
-  console.log('------------------------------------');
-  console.log('   ¡TEST EXITOSO! MENSAJE RECIBIDO   ');
-  console.log('   Payload:', data);
-  console.log('------------------------------------');
-  socket.emit('pongTest', { respuesta: 'Servidor escuchando OK' });
-});
-
-
+  socket.on('pingTest', (data) => {
+    console.log('------------------------------------');
+    console.log('   ¡TEST EXITOSO! MENSAJE RECIBIDO   ');
+    console.log('   Payload:', data);
+    console.log('------------------------------------');
+    socket.emit('pongTest', { respuesta: 'Servidor escuchando OK' });
+  });
 
   // ==========================================
   // LÓGICA DEL EVENTO ESPECIAL (ADMIN PANEL)
   // ==========================================
 
   // 1. REGISTRO DEL ADMIN
-socket.on('registerAdmin', () => {
-  adminSocketId = socket.id;
-  
-  // UNIR AL ADMIN A LA SALA DEL EVENTO
-  socket.join('special_event_lobby');
-  
-  console.log(`[ADMIN] Panel de Administración vinculado en Socket ID: ${socket.id}`);
-  
-  // Sincronizar estado actual del lobby con el panel
-  socket.emit('updateSpecialEventLobby', specialEventLobby);
-});
+  socket.on('registerAdmin', () => {
+    adminSocketId = socket.id;
+    socket.join('special_event_lobby');
+    console.log(`[ADMIN] Panel de Administración vinculado en Socket ID: ${socket.id}`);
+    socket.emit('updateSpecialEventLobby', specialEventLobby);
+  });
 
-  // 2. UNIRSE AL LOBBY DEL EVENTO ESPECIAL (Versión corregida y blindada)
+  // 2. UNIRSE AL LOBBY DEL EVENTO ESPECIAL
   socket.on('joinSpecialEventLobby', (data) => {
-    // Garantizamos la lectura del nombre venga como { username } o como string
     const rawName = (typeof data === 'object' && data.username) ? data.username : data;
     const cleanName = (rawName || 'Jugador').toString().trim();
 
@@ -533,15 +532,11 @@ socket.on('registerAdmin', () => {
       return socket.emit('errorMsg', 'El torneo especial ya está en curso.');
     }
 
-    // Aseguramos que el array esté inicializado
     if (!Array.isArray(specialEventLobby)) {
       specialEventLobby = [];
     }
 
-    // Eliminamos cualquier registro previo de este mismo socket si existía
     specialEventLobby = specialEventLobby.filter(p => p && p.id !== socket.id);
-
-    // Agregamos al jugador
     specialEventLobby.push({ id: socket.id, name: cleanName });
     
     socket.join('special_event_lobby');
@@ -549,10 +544,7 @@ socket.on('registerAdmin', () => {
 
     console.log(`[EVENTO ESPECIAL] ✅ ${cleanName} unído con éxito. Total en lobby: ${specialEventLobby.length}`);
 
-    // Confirmación al jugador que envió la solicitud
     socket.emit('specialEventLobbyJoined');
-
-    // Notificar a todos los miembros de la sala y al Admin
     io.to('special_event_lobby').emit('updateSpecialEventLobby', specialEventLobby);
     if (adminSocketId) {
       io.to(adminSocketId).emit('updateSpecialEventLobby', specialEventLobby);
@@ -561,7 +553,6 @@ socket.on('registerAdmin', () => {
 
   // 3. INICIO DEL TORNEO DESDE EL PANEL DE ADMIN
   socket.on('adminStartSpecialEvent', () => {
-    // Validar autenticidad de la conexión admin
     if (socket.id !== adminSocketId) {
       console.warn(`[ADMIN WARNING] ⚠️ Intento de inicio no autorizado desde: ${socket.id}`);
       return;
@@ -579,7 +570,6 @@ socket.on('registerAdmin', () => {
     console.log(`[EVENTO ESPECIAL] Jugadores participantes: ${totalPlayers}`);
     console.log(`======================================================\n`);
 
-    // Crear el torneo utilizando la estructura exacta de tu backend
     tournaments[tCode] = {
       host: adminSocketId,
       maxPlayers: totalPlayers,
@@ -590,11 +580,8 @@ socket.on('registerAdmin', () => {
     };
 
     specialEventActive = true;
-
-    // Notificar al Panel Admin que el torneo inició
     socket.emit('specialEventStartedSuccess', { tCode });
 
-    // Transferir jugadores del lobby al torneo e iniciar el cuadro eliminatorio
     specialEventLobby.forEach(player => {
       const s = io.sockets.sockets.get(player.id);
       if (s) {
@@ -604,46 +591,54 @@ socket.on('registerAdmin', () => {
       }
     });
 
-    // Construir la estructura del torneo y arrancar la ronda
     createTournamentBracket(tournaments[tCode]);
-    
-    // Notificar inicio a los clientes e iniciar combates
     io.to(tCode).emit('tournamentCreated', { tCode, maxPlayers: totalPlayers, players: tournaments[tCode].players });
     advanceTournament(tCode);
 
-    // Resetear el lobby del Evento Especial para futuras ediciones
     specialEventLobby = [];
     specialEventActive = false;
   });
 
 
-  socket.on('createRoom', ({ username }) => {
+  // SALA UNIFORMADA CON ELECCIÓN DE PERSONAJE DINÁMICO
+  socket.on('createRoom', ({ username, role }) => {
     const roomCode = generateCode();
     const selectedBg = mapBackgrounds[Math.floor(Math.random() * mapBackgrounds.length)];
+    const playerRole = role || 'warrior';
+
+    const initialScores = {};
+    initialScores[playerRole] = 0;
 
     rooms[roomCode] = {
-      players: [{ id: socket.id, name: username, role: 'warrior' }],
-      scores: { warrior: 0, mage: 0 },
+      players: [{ id: socket.id, name: username, role: playerRole }],
+      scores: initialScores,
       bgMap: selectedBg
     };
 
     socket.join(roomCode);
     socket.roomCode = roomCode;
-    socket.emit('roomCreated', { roomCode, role: 'warrior', bgMap: selectedBg });
+    socket.emit('roomCreated', { roomCode, role: playerRole, bgMap: selectedBg });
   });
 
-  socket.on('joinRoom', ({ username, roomCode }) => {
+  socket.on('joinRoom', ({ username, roomCode, role }) => {
     const code = roomCode.toUpperCase();
     const room = rooms[code];
 
     if (!room) return socket.emit('errorMsg', 'La sala no existe.');
     if (room.players.length >= 2) return socket.emit('errorMsg', 'La sala está llena.');
 
-    room.players.push({ id: socket.id, name: username, role: 'mage' });
+    const playerRole = role || 'mage';
+    room.players.push({ id: socket.id, name: username, role: playerRole });
+    
+    // Inicializar score para el rol que se acaba de unirse si no existe
+    if (room.scores[playerRole] === undefined) {
+      room.scores[playerRole] = 0;
+    }
+
     socket.join(code);
     socket.roomCode = code;
 
-    socket.emit('roomJoined', { roomCode: code, role: 'mage', players: room.players, bgMap: room.bgMap });
+    socket.emit('roomJoined', { roomCode: code, role: playerRole, players: room.players, bgMap: room.bgMap });
     io.to(code).emit('gameStart', { players: room.players, scores: room.scores });
     startCountdown(code);
   });
@@ -666,15 +661,13 @@ socket.on('registerAdmin', () => {
     socket.emit('tournamentCreated', { tCode, maxPlayers: parsedMax, players: tournaments[tCode].players });
   });
 
-// 1. Al unirse a la pelea del torneo, ACTUALIZAR socket.roomCode a la nueva sub-sala
-socket.on('joinTournamentMatch', ({ roomCode }) => {
-  if (roomCode) {
-    socket.join(roomCode);
-    socket.roomCode = roomCode; // <-- ESTA LÍNEA ES VITAL PARA SINCRONIZAR LA SALA DEL SOCKET
-    console.log(`[SERVER] 📥 Socket ${socket.id} actualizado y unido a sub-sala: ${roomCode}`);
-  }
-});
-
+  socket.on('joinTournamentMatch', ({ roomCode }) => {
+    if (roomCode) {
+      socket.join(roomCode);
+      socket.roomCode = roomCode;
+      console.log(`[SERVER] 📥 Socket ${socket.id} actualizado y unido a sub-sala: ${roomCode}`);
+    }
+  });
 
   socket.on('joinTournament', ({ username, tCode }) => {
     const code = tCode.toUpperCase();
@@ -685,7 +678,6 @@ socket.on('joinTournamentMatch', ({ roomCode }) => {
 
     t.players.push({ id: socket.id, name: username });
     
-    // Limpieza de sub-salas residuales antes de unirse al lobby del torneo
     Array.from(socket.rooms).forEach(room => {
       if (room !== socket.id && room.startsWith(code)) {
         socket.leave(room);
@@ -717,32 +709,40 @@ socket.on('joinTournamentMatch', ({ roomCode }) => {
     }
   });
 
-  // GAMEPLAY EN COMBATE (CON TRACKING DE MÉTRICAS)
+  // GAMEPLAY EN COMBATE (CON TRACKING DE MÉTRICAS Y HABILIDADES DE CLASES)
   socket.on('playerAction', (data) => {
     packetCount++;
     actionDetails.playerAction++;
     if (socket.roomCode) socket.to(socket.roomCode).emit('enemyAction', data);
   });
 
-socket.on('sendDamage', (data) => {
-  if (data.roomCode && socket.roomCode !== data.roomCode) {
-    socket.roomCode = data.roomCode;
-  }
+  socket.on('sendDamage', (data) => {
+    if (data.roomCode && socket.roomCode !== data.roomCode) {
+      socket.roomCode = data.roomCode;
+    }
 
-  if (data.roomCode) {
-    // Retransmitir ÚNICAMENTE al contrincante (excluyendo al emisor)
-    socket.to(data.roomCode).emit('playerDamaged', data);
-  }
-});
+    if (data.roomCode) {
+      socket.to(data.roomCode).emit('playerDamaged', data);
+    }
+  });
 
+  // --- HABILIDADES DE MAGO ---
   socket.on('mageShoot', (data) => { packetCount++; actionDetails.other++; socket.roomCode && io.to(socket.roomCode).emit('spawnMageProjectile', data); });
-  socket.on('warriorBeam', (data) => { packetCount++; actionDetails.other++; socket.roomCode && socket.to(socket.roomCode).emit('spawnWarriorBeam', data); });
   socket.on('mageStartCharge', () => { packetCount++; actionDetails.other++; socket.roomCode && socket.to(socket.roomCode).emit('mageStartCharge'); });
   socket.on('mageStopCharge', () => { packetCount++; actionDetails.other++; socket.roomCode && socket.to(socket.roomCode).emit('mageStopCharge'); });
-  socket.on('basicAttackSound', (data) => { packetCount++; actionDetails.other++; socket.roomCode && socket.to(socket.roomCode).emit('basicAttackSound', data); });
   socket.on('mageSpecialSound', () => { packetCount++; actionDetails.other++; socket.roomCode && socket.to(socket.roomCode).emit('mageSpecialSound'); });
-  socket.on('defenseSound', () => { packetCount++; actionDetails.other++; socket.roomCode && socket.to(socket.roomCode).emit('defenseSound'); });
   socket.on('mageDash', (data) => { packetCount++; actionDetails.other++; socket.roomCode && io.to(socket.roomCode).emit('executeMageDash', data); });
+
+  // --- HABILIDADES DE GUERRERO ---
+  socket.on('warriorBeam', (data) => { packetCount++; actionDetails.other++; socket.roomCode && socket.to(socket.roomCode).emit('spawnWarriorBeam', data); });
+
+  // --- HABILIDADES DE ARQUERO (ARCHER) ---
+  socket.on('archerShoot', (data) => { packetCount++; actionDetails.other++; socket.roomCode && io.to(socket.roomCode).emit('spawnArcherProjectile', data); });
+  socket.on('archerSpecialSound', () => { packetCount++; actionDetails.other++; socket.roomCode && socket.to(socket.roomCode).emit('archerSpecialSound'); });
+
+  // --- SONIDOS GENERALES ---
+  socket.on('basicAttackSound', (data) => { packetCount++; actionDetails.other++; socket.roomCode && socket.to(socket.roomCode).emit('basicAttackSound', data); });
+  socket.on('defenseSound', () => { packetCount++; actionDetails.other++; socket.roomCode && socket.to(socket.roomCode).emit('defenseSound'); });
 
   // FIN DE RONDA / PELEA
   socket.on('roundWon', ({ winnerRole }) => {
@@ -754,7 +754,12 @@ socket.on('sendDamage', (data) => {
 
     room.roundEnding = true;
 
-    const validRole = (winnerRole === 'warrior' || winnerRole === 'mage') ? winnerRole : 'warrior';
+    // Validación de roles soportados: warrior, mage y archer
+    const validRole = (winnerRole === 'warrior' || winnerRole === 'mage' || winnerRole === 'archer') ? winnerRole : 'warrior';
+    
+    if (!room.scores[validRole]) {
+      room.scores[validRole] = 0;
+    }
     room.scores[validRole]++;
 
     const isGameOver = room.scores[validRole] >= 3;
@@ -795,8 +800,8 @@ socket.on('sendDamage', (data) => {
         room.players.forEach(p => {
           const s = io.sockets.sockets.get(p.id);
           if (s) {
-            s.leave(subRoomCode); // Sub-sala destruida
-            s.roomCode = tCode;    // Vuelve a la sala principal del torneo
+            s.leave(subRoomCode); 
+            s.roomCode = tCode;    
           }
         });
 
@@ -812,18 +817,15 @@ socket.on('sendDamage', (data) => {
     }
   });
 
-  
-// ==========================================
-  // MANEJO DE DESCONEXIÓN (ÚNICO Y CONSOLIDADO)
+  // ==========================================
+  // MANEJO DE DESCONEXIÓN
   // ==========================================
   socket.on('disconnect', () => {
-    // Si se desconecta el Admin
     if (socket.id === adminSocketId) {
       console.log('[ADMIN] Panel Admin desconectado.');
       adminSocketId = null;
     }
 
-    // Si se desconecta un jugador en la sala de espera del Evento Especial
     if (socket.specialLobby) {
       const idx = specialEventLobby.findIndex(p => p.id === socket.id);
       if (idx !== -1) {
@@ -837,7 +839,6 @@ socket.on('sendDamage', (data) => {
       }
     }
 
-    // Lógica previa de desconexión de salas normales/torneos
     if (socket.roomCode && rooms[socket.roomCode]) {
       rooms[socket.roomCode].players = rooms[socket.roomCode].players.filter(p => p.id !== socket.id);
       io.to(socket.roomCode).emit('playerLeft');
@@ -845,7 +846,7 @@ socket.on('sendDamage', (data) => {
     }
   });
 
-}); // 👈 Cierre de io.on('connection')
+}); 
 
 const PORT = 3000;
 server.listen(PORT, '0.0.0.0', () => console.log(`Servidor corriendo en http://localhost:${PORT}`));
