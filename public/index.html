@@ -9,11 +9,41 @@
 </head>
 <body>
 
-  <!-- 1. PANTALLA DE INICIO (PORTADA) -->
-  <div id="intro-screen" class="screen active">
-    <button class="btn-start" onclick="enterMenu()">¡Iniciar Juego!</button>
-  </div>
+<!-- BANNER Y MODAL DE AUTENTICACIÓN -->
+<div id="auth-container" class="auth-modal active">
+  <div class="auth-card">
+    <h2 id="auth-title">Iniciar Sesión</h2>
+    
+    <div id="auth-error" class="auth-error-msg" style="display: none;"></div>
 
+    <!-- FORMULARIO LOGIN -->
+    <form id="login-form">
+      <div class="input-group">
+        <input type="email" id="login-email" placeholder="Correo electrónico" required>
+      </div>
+      <div class="input-group">
+        <input type="password" id="login-password" placeholder="Contraseña" required>
+      </div>
+      <button type="submit" id="btn-login" class="btn-primary">Entrar</button>
+      <p class="auth-switch">¿No tienes cuenta? <a href="#" id="show-register">Regístrate aquí</a></p>
+    </form>
+
+    <!-- FORMULARIO REGISTRO -->
+    <form id="register-form" style="display: none;">
+      <div class="input-group">
+        <input type="text" id="reg-username" placeholder="Nombre de usuario" required>
+      </div>
+      <div class="input-group">
+        <input type="email" id="reg-email" placeholder="Correo electrónico" required>
+      </div>
+      <div class="input-group">
+        <input type="password" id="reg-password" placeholder="Contraseña" required>
+      </div>
+      <button type="submit" id="btn-register" class="btn-primary">Crear Cuenta</button>
+      <p class="auth-switch">¿Ya tienes cuenta? <a href="#" id="show-login">Inicia Sesión</a></p>
+    </form>
+  </div>
+</div>
   <!-- 2. PANTALLA DE SELECCIÓN DE MODO -->
   <div id="menu-screen" class="screen">
     <div class="menu-card">
@@ -27,6 +57,8 @@
         <button class="btn-option" onclick="startVsBot()">1 vs Máquina</button>
         <button class="btn-option" onclick="openTournamentModal()">Torneo en Red Local</button>
         <button id="btn-special-event" class="btn-option" onclick="openSpecialEventModal()">Evento Especial</button>
+        <!-- AGREGAR AQUÍ EL BOTÓN DE CERRAR SESIÓN -->
+    <button id="btn-logout" class="btn-option btn-back" onclick="logout()" style="margin-top: 15px; background-color: #d9534f;">Cerrar Sesión</button>
       </div>
     </div>
   </div>
@@ -197,6 +229,10 @@
     </div>
   </div>
 
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+    // Si la página corre en localhost, conecta a local; de lo contrario, usa Render
+    const URL_SERVER = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script>
     const URL_SERVER = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -212,5 +248,7 @@
   <script src="js/app.js"></script>
 
 
+<!-- Por esto (CORRECTO): -->
+<script src="js/authClient.js"></script>
 </body>
 </html>

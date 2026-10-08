@@ -5,6 +5,58 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Juego de Pelea: 1 vs 1 Local</title>
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/local-game.css">
+  <style>
+    /* Botón de cierre (X) bajado para no obstaculizar los nombres */
+.btn-close-match {
+  position: absolute;
+  top: 45px; /* Se bajó de 12px a 45px */
+  right: 15px;
+  z-index: 1000;
+  width: 32px;
+  height: 32px;
+  line-height: 30px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: bold;
+  color: #ffffff;
+  background-color: rgba(217, 83, 79, 0.85);
+  border: 1px solid #b52b27;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  user-select: none;
+}
+
+.btn-close-match:hover {
+  background-color: #ff4444;
+  transform: scale(1.15);
+  box-shadow: 0 0 10px rgba(255, 68, 68, 0.9);
+}
+
+    /* Asegura que la barra de UI mantenga su espacio vertical */
+    .game-container {
+      position: relative;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="game-container">
+    <img src="img/backgrounds/main_bg.jpeg" class="bg-back">
+
+    <!-- BOTÓN DE CIERRE (X) EN LA ESQUINA SUPERIOR DERECHA -->
+    <button class="btn-close-match" onclick="returnToModeSelection()" title="Volver al menú de modos">
+      ✖
+    </button>
+
+    <!-- UI DE VIDA Y MANÁ -->
+    <div class="ui-layer" style="width: 100%; display: flex; justify-content: space-between; margin-bottom: 10px; padding-top: 10px;">
+      <div style="width: 45%;">
+        <div class="player-label" style="color: #ff4444;" id="ui-warrior-name">Guerrero (P1)</div>
+        <div class="health-bar-container"><div id="warrior-hp" class="health-bar-fill" style="width: 100%;"></div></div>
+        <div class="mana-bar-container"><div id="warrior-mana" class="mana-bar-fill" style="width: 100%;"></div></div>
   <link rel="stylesheet" href="css/character.css">
   <style>
     body.game-body {
@@ -172,5 +224,15 @@
 
   <!-- SCRIPT DEL JUEGO -->
   <script src="js/local-game.js"></script>
+
+  <!-- LÓGICA DE RETORNO AL MENÚ DE MODOS -->
+  <script>
+    function returnToModeSelection() {
+      if (confirm('¿Deseas salir de la partida y volver a la selección de modo?')) {
+        window.location.href = 'index.html?screen=menu';
+      }
+    }
+  </script>
+
 </body>
 </html>
