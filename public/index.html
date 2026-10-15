@@ -8,8 +8,25 @@
   <link rel="stylesheet" href="css/menu.css">
 </head>
 <body>
+  <script>
+window.addEventListener('DOMContentLoaded', () => {
+    if (window.location.hash === '#menu-screen') {
+        // 1. Ocultar el modal/contenedor de inicio de sesión
+        const authContainer = document.getElementById('auth-container');
+        if (authContainer) {
+            authContainer.classList.remove('active');
+            authContainer.style.display = 'none'; // Por si acaso usa display en línea
+        }
 
-<!-- BANNER Y MODAL DE AUTENTICACIÓN -->
+        // 2. Mostrar la pantalla del menú de selección
+        const menuScreen = document.getElementById('menu-screen');
+        if (menuScreen) {
+            menuScreen.style.display = 'flex'; // O ajusta según la clase que use tu CSS
+        }
+    }
+});
+  </script>
+
 <div id="auth-container" class="auth-modal active">
   <div class="auth-card">
     <h2 id="auth-title">Iniciar Sesión</h2>
@@ -230,10 +247,7 @@
   </div>
 
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-  <script>
-    // Si la página corre en localhost, conecta a local; de lo contrario, usa Render
-    const URL_SERVER = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+ 
   <script>
     const URL_SERVER = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       ? 'http://localhost:3000'

@@ -24,9 +24,7 @@ function esAdmin(req, res, next) {
     }
 }
 
-// ---------------------------------------------------------
-// 1. RUTA DE REGISTRO (/api/auth/register)
-// ---------------------------------------------------------
+
 // 1. RUTA DE REGISTRO (/api/auth/register)
 router.post('/register', async (req, res) => {
     const { username, email, password } = req.body;
@@ -65,9 +63,7 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// ---------------------------------------------------------
-// 2. RUTA DE LOGIN (/api/auth/login)
-// ---------------------------------------------------------
+
 // 2. RUTA DE LOGIN (/api/auth/login)
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
@@ -85,7 +81,7 @@ router.post('/login', async (req, res) => {
 
         const usuario = results[0];
 
-        // Comparar con usuario.password_hash en lugar de usuario.password
+        // Comparar con usuario.password_hash
         const esValida = await bcrypt.compare(password, usuario.password_hash);
         if (!esValida) {
             return res.status(400).json({ error: 'Credenciales inválidas.' });
