@@ -29,6 +29,7 @@
   user-select: none;
 }
 
+
 .btn-close-match:hover {
   background-color: #ff4444;
   transform: scale(1.15);
@@ -227,11 +228,11 @@
 
   <!-- LÓGICA DE RETORNO AL MENÚ DE MODOS -->
   <script>
-    function returnToModeSelection() {
-      if (confirm('¿Deseas salir de la partida y volver a la selección de modo?')) {
-        window.location.href = 'index.html?screen=menu';
-      }
+  function returnToModeSelection() {
+    if (confirm('¿Deseas salir de la partida y volver a la selección de modo?')) {
+        window.location.href = 'index.html#menu-screen';
     }
+}
   </script>
 
 </body>
