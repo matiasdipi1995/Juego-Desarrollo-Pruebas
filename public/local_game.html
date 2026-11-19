@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Juego de Pelea: 1 vs 1 Local (Misma PC)</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/local-game.css">
+</head>
+<body>
+
+  <div class="game-container">
+    <img src="img/backgrounds/main_bg.jpeg" class="bg-back">
+
+    <!-- BOTÓN VOLVER AL MENÚ -->
+    <button class="btn-return-menu game-exit-btn" onclick="returnToModeSelection()" title="Volver al menú principal">
+      ✖ Salir
+    </button>
+
+    <!-- UI DE VIDA Y MANÁ -->
+    <div class="ui-layer arena-ui-layer">
+      <div class="hud-player-col">
+        <div class="player-label p1-text" id="p1-name">Jugador 1</div>
+        <div class="health-bar-container"><div id="p1-hp" class="health-bar-fill hud-bar-init"></div></div>
+        <div class="mana-bar-container"><div id="p1-mana" class="mana-bar-fill hud-bar-init"></div></div>
+      </div>
+      <div class="hud-player-col p2-hud-col">
+        <div class="player-label p2-text" id="p2-name">Jugador 2</div>
+        <div class="health-bar-container"><div id="p2-hp" class="health-bar-fill hud-bar-init"></div></div>
+        <div class="mana-bar-container"><div id="p2-mana" class="mana-bar-fill hud-bar-init"></div></div>
+      </div>
+    </div>
+
+    <!-- CANVAS DEL JUEGO -->
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+    <!-- GUÍA DE CONTROLES EN PANTALLA -->
+    <div class="controls-hint">
+      <div class="hint-col">
+        <b class="p1-text">P1 (WASD):</b><br>
+        A/D: Mover | W: Saltar | S: Defender<br>
+        Espacio: Básico | E: Especial | Q: Ítem
+      </div>
+      <div class="hint-col right">
+        <b class="p2-text">P2 (Flechas):</b><br>
+        ←/→: Mover | ↑: Saltar | ↓: Defender<br>
+        Enter: Básico | M / Shift Der: Especial | N: Ítem
+      </div>
+    </div>
+  </div>
+
+  <!-- CLASES MODULARES COMPARTIDAS -->
+  <script src="js/classes/Projectiles.js"></script>
+  <script src="js/classes/Character.js"></script>
+  <script src="js/classes/Warrior.js"></script>
+  <script src="js/classes/Mage.js"></script>
+  <script src="js/classes/Archer.js"></script>
+  <script src="js/classes/Ninja.js"></script>
+  <script src="js/classes/CharacterFactory.js"></script>
+
+  <!-- CONTROLADOR DEL MODO LOCAL -->
+  <script src="js/local-game.js"></script>
+
+</body>
+</html>

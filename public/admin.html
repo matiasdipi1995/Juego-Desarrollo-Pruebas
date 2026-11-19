@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Administración - Lucha Retro</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+  <div class="admin-wrapper">
+    <div class="admin-header">
+      <div>
+        <h2>🛡️ PANEL DE ADMINISTRACIÓN</h2>
+        <span class="admin-subtitle">Gestión en tiempo real de Lucha Retro</span>
+      </div>
+      <button onclick="location.href='index.html'" class="btn admin-btn-back">
+        ← Volver al Juego
+      </button>
+    </div>
+
+    <div id="admin-toast"></div>
+
+    <!-- PESTAÑAS -->
+    <div class="admin-tabs">
+      <button class="admin-tab-btn" data-tab="event" onclick="switchAdminTab('event')">🏆 Evento Especial</button>
+      <button class="admin-tab-btn" data-tab="stats" onclick="switchAdminTab('stats')">⚖️ Balance de Personajes</button>
+      <button class="admin-tab-btn" data-tab="items" onclick="switchAdminTab('items')">🛒 Tienda e Ítems</button>
+      <button class="admin-tab-btn" data-tab="users" onclick="switchAdminTab('users')">👥 Usuarios y Monedas</button>
+    </div>
+
+    <!-- 1. EVENTO ESPECIAL -->
+    <div class="admin-section" data-tab="event">
+      <h3>Sala de Espera del Evento Especial</h3>
+      <p class="admin-help-text">Jugadores conectados esperando inicio: <b id="admin-se-count">0</b></p>
+      <ul id="admin-se-list" class="admin-lobby-list">
+        <li>Cargando sala...</li>
+      </ul>
+      <button onclick="triggerSpecialEventStart()" class="btn admin-btn-launch">
+        🚀 INICIAR TORNEO ESPECIAL AHORA
+      </button>
+    </div>
+
+    <!-- 2. BALANCE DE PERSONAJES -->
+    <div class="admin-section" data-tab="stats">
+      <h3>Estadísticas Base (PostgreSQL)</h3>
+      <p class="admin-subtext">Los cambios aplican automáticamente a todas las nuevas partidas Online, Bot y Local.</p>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Clase</th>
+              <th>Vida Base</th>
+              <th>Maná Base</th>
+              <th>Ataque Base</th>
+              <th>Defensa Base</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="admin-stats-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 3. TIENDA E ÍTEMS -->
+    <div class="admin-section" data-tab="items">
+      <h3>Crear Nuevo Ítem</h3>
+      <div class="admin-create-box">
+        <canvas id="admin-item-canvas" class="admin-preview-canvas" width="160" height="170"></canvas>
+
+        <form onsubmit="createNewShopItem(event)" class="admin-create-form">
+          <div class="admin-field">
+            <label>Nombre del Ítem</label>
+            <input type="text" id="new-item-name" required placeholder="Ej: Katana Solar" class="admin-text-input admin-full-input">
+          </div>
+          <div class="admin-field">
+            <label>Clase</label>
+            <select id="new-item-class" onchange="updateNewItemPreview()" class="admin-select-input admin-full-input">
+              <option value="warrior">Guerrero</option>
+              <option value="mage">Mago</option>
+              <option value="archer">Arquero</option>
+              <option value="ninja">Ninja</option>
+            </select>
+          </div>
+          <div class="admin-field">
+            <label>Slot / Tipo</label>
+            <select id="new-item-slot" onchange="updateNewItemPreview()" class="admin-select-input admin-full-input">
+              <option value="arma">Arma</option>
+              <option value="armadura">Armadura</option>
+              <option value="sombrero">Sombrero</option>
+              <option value="accesorio">Accesorio</option>
+            </select>
+          </div>
+          <div class="admin-field">
+            <label>Atributo que Mejora</label>
+            <select id="new-item-attr" class="admin-select-input admin-full-input">
+              <option value="ataque">Ataque</option>
+              <option value="defensa">Defensa</option>
+              <option value="vida">Vida</option>
+              <option value="mana">Maná</option>
+            </select>
+          </div>
+          <div class="admin-field">
+            <label>Bonificación (+)</label>
+            <input type="number" id="new-item-bonus" required min="1" value="15" class="admin-num-input admin-full-input">
+          </div>
+          <div class="admin-field">
+            <label>Precio (Monedas)</label>
+            <input type="number" id="new-item-price" required min="0" value="600" class="admin-num-input admin-full-input">
+          </div>
+          <div class="admin-field full-span">
+            <label>Apariencia Visual en Canvas</label>
+            <select id="new-item-visual" onchange="updateNewItemPreview()" class="admin-select-input admin-full-input">
+              <optgroup label="Guerrero">
+                <option value="espada_fuego">espada_fuego (Arma ígnea)</option>
+                <option value="coraza_acero">coraza_acero (Pechera plateada)</option>
+                <option value="yelmo_dorado">yelmo_dorado (Casco real)</option>
+                <option value="capa_carmesi">capa_carmesi (Capa roja)</option>
+              </optgroup>
+              <optgroup label="Mago">
+                <option value="orbe_arcano">orbe_arcano (Orbe flotante)</option>
+                <option value="tunica_runica">tunica_runica (Túnica rúnica)</option>
+                <option value="sombrero_merlin">sombrero_merlin (Sombrero violeta)</option>
+                <option value="aura_astral">aura_astral (Aura cian)</option>
+              </optgroup>
+              <optgroup label="Arquero">
+                <option value="arco_elfico">arco_elfico (Arco esmeralda)</option>
+                <option value="pechera_bosque">pechera_bosque (Chaleco de cuero)</option>
+                <option value="sombrero_cazador">sombrero_cazador (Gorro pluma dorada)</option>
+                <option value="carcaj_dorado">carcaj_dorado (Carcaj dorado)</option>
+              </optgroup>
+              <optgroup label="Ninja">
+                <option value="katana_sombra">katana_sombra (Katana neón)</option>
+                <option value="traje_shinobi">traje_shinobi (Traje táctico)</option>
+                <option value="banda_maestro">banda_maestro (Vincha dorada)</option>
+                <option value="capa_invisible">capa_invisible (Capa Invisibilidad 10s)</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="admin-field full-span">
+            <button type="submit" class="btn admin-btn-create">+ AGREGAR ÍTEM A LA TIENDA</button>
+          </div>
+        </form>
+      </div>
+
+      <h3>Catálogo Actual</h3>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Clase</th>
+              <th>Tipo</th>
+              <th>Atributo</th>
+              <th>Bono</th>
+              <th>Precio</th>
+              <th>Visual</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="admin-items-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 4. USUARIOS Y MONEDAS -->
+    <div class="admin-section" data-tab="users">
+      <h3>Cuentas Registradas</h3>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Usuario</th>
+              <th>Correo</th>
+              <th>Monedas</th>
+              <th>Rol</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="admin-users-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="js/classes/Projectiles.js"></script>
+  <script src="js/classes/Character.js"></script>
+  <script src="js/classes/Warrior.js"></script>
+  <script src="js/classes/Mage.js"></script>
+  <script src="js/classes/Archer.js"></script>
+  <script src="js/classes/Ninja.js"></script>
+  <script src="js/classes/CharacterFactory.js"></script>
+  <script src="js/adminClient.js"></script>
+</body>
+</html>

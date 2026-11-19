@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seleccionar Personaje</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/character.css">
+</head>
+<body>
+
+  <div id="selection-card" class="selection-card">
+    <h2 id="main-title" class="title">Elige tu Personaje</h2>
+
+    <div class="players-layout">
+      <!-- BLOQUE JUGADOR 1 -->
+      <div class="player-selection-block">
+        <h3 class="p1-heading">
+          Jugador 1: <span id="p1-selected-name">GUERRERO</span>
+        </h3>
+        <div id="p1-hint" class="controls-hint">[A] Izq | [D] Der | [Espacio] Confirmar (o hacé clic)</div>
+        <div class="characters-container">
+          <div class="char-card p1-card" onclick="selectP1Index(0)" id="p1-card-warrior">
+            <div class="char-avatar warrior-avatar"></div>
+            <h4>Guerrero</h4>
+            <p>Cuerpo a cuerpo y Rayo</p>
+          </div>
+          <div class="char-card p1-card" onclick="selectP1Index(1)" id="p1-card-mage">
+            <div class="char-avatar mage-avatar"></div>
+            <h4>Mago</h4>
+            <p>Orbes y Dash veloz</p>
+          </div>
+          <div class="char-card p1-card" onclick="selectP1Index(2)" id="p1-card-archer">
+            <div class="char-avatar archer-avatar"></div>
+            <h4>Arquero</h4>
+            <p>Flechas y Gran Flecha</p>
+          </div>
+          <div class="char-card p1-card" onclick="selectP1Index(3)" id="p1-card-ninja">
+            <div class="char-avatar ninja-avatar"></div>
+            <h4>Ninja</h4>
+            <p>Shuriken y Estocada x2</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- BLOQUE JUGADOR 2 -->
+      <div id="p2-block" class="player-selection-block">
+        <h3 class="p2-heading">
+          Jugador 2: <span id="p2-selected-name">MAGO</span>
+        </h3>
+        <div class="controls-hint">[←] Izq | [→] Der | [Enter] Confirmar (o hacé clic)</div>
+        <div class="characters-container">
+          <div class="char-card p2-card" onclick="selectP2Index(0)" id="p2-card-warrior">
+            <div class="char-avatar warrior-avatar"></div>
+            <h4>Guerrero</h4>
+            <p>Cuerpo a cuerpo y Rayo</p>
+          </div>
+          <div class="char-card p2-card" onclick="selectP2Index(1)" id="p2-card-mage">
+            <div class="char-avatar mage-avatar"></div>
+            <h4>Mago</h4>
+            <p>Orbes y Dash veloz</p>
+          </div>
+          <div class="char-card p2-card" onclick="selectP2Index(2)" id="p2-card-archer">
+            <div class="char-avatar archer-avatar"></div>
+            <h4>Arquero</h4>
+            <p>Flechas y Gran Flecha</p>
+          </div>
+          <div class="char-card p2-card" onclick="selectP2Index(3)" id="p2-card-ninja">
+            <div class="char-avatar ninja-avatar"></div>
+            <h4>Ninja</h4>
+            <p>Shuriken y Estocada x2</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions-container">
+      <button id="btn-start-fight" class="btn-start-fight" onclick="confirmSelection()" disabled>
+        ¡PELEAR!
+      </button>
+      <button id="btn-back" class="btn-back" onclick="goBack()">Volver</button>
+    </div>
+  </div>
+
+  <script src="js/select-character.js"></script>
+</body>
+</html>

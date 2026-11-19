@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Juego de Pelea: vs Bot</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="game-screen" class="game-container">
+    <img src="img/backgrounds/main_bg.jpeg" class="bg-back">
+
+    <!-- BOTÓN VOLVER AL MENÚ -->
+    <button class="btn-return-menu game-exit-btn" onclick="returnToModeSelection()" title="Volver al menú principal">
+      ✖ Salir
+    </button>
+
+    <!-- CAPA DE BARRAS Y NOMBRES -->
+    <div class="ui-layer arena-ui-layer">
+      <div>
+        <div class="player-label p1-text" id="p1-name">Jugador 1</div>
+        <div class="health-bar-container"><div id="p1-hp" class="health-bar-fill"></div></div>
+        <div class="mana-bar-container"><div id="p1-mana" class="mana-bar-fill"></div></div>
+      </div>
+      <div class="room-info">
+        <span>DIFICULTAD: <b id="diff-tag">-</b></span>
+      </div>
+      <div class="p2-hud-col">
+        <div class="player-label p2-text" id="p2-name">IA Bot</div>
+        <div class="health-bar-container"><div id="p2-hp" class="health-bar-fill"></div></div>
+        <div class="mana-bar-container"><div id="p2-mana" class="mana-bar-fill"></div></div>
+      </div>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+    <!-- CONTROLES TÁCTILES PARA MÓVIL -->
+    <div id="touch-controls">
+      <div class="touch-group left-group">
+        <button id="btn-left" class="touch-btn">◀</button>
+        <button id="btn-right" class="touch-btn">▶</button>
+      </div>
+
+      <div class="touch-group right-group">
+        <button id="btn-jump" class="touch-btn">▲ Saltar</button>
+        <button id="btn-attack" class="touch-btn action-btn">⚔ Atacar</button>
+        <button id="btn-special" class="touch-btn special-btn">⚡</button>
+        <button id="btn-defend" class="touch-btn shield-btn">🛡 Defender</button>
+      </div>
+    </div>
+
+    <!-- GUÍA DE CONTROLES EN PANTALLA -->
+    <div class="controls-hint">
+      <div class="hint-col">
+        <b class="p1-text">P1:</b><br>
+        A/D: Moverse | W: Saltar | S: Defender<br>
+        Espacio: Ataque Básico | E: Especial | Q: Ítem
+      </div>
+      <div class="hint-col right">
+        <b class="p2-text">IA Bot:</b><br>
+        Controlado por Computadora
+      </div>
+    </div>
+  </div>
+
+  <!-- CLASES MODULARES COMPARTIDAS -->
+  <script src="js/classes/Projectiles.js"></script>
+  <script src="js/classes/Character.js"></script>
+  <script src="js/classes/Warrior.js"></script>
+  <script src="js/classes/Mage.js"></script>
+  <script src="js/classes/Archer.js"></script>
+  <script src="js/classes/Ninja.js"></script>
+  <script src="js/classes/CharacterFactory.js"></script>
+
+  <!-- CONTROLADOR DEL MODO VS BOT -->
+  <script src="js/bot-game.js"></script>
+</body>
+</html>

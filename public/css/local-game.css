@@ -1,0 +1,40 @@
+/* Ajustes visuales para el modo local en misma PC */
+body {
+  margin: 0;
+  padding: 0;
+  background: #0f0f19;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+}
+
+.game-container {
+  position: relative;
+  width: 800px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.controls-hint {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  color: #aaa;
+  font-size: 13px;
+  margin-top: 10px;
+  background: rgba(0,0,0,0.6);
+  padding: 10px;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.hint-col { 
+  text-align: left; 
+}
+
+.hint-col.right { 
+  text-align: right; 
+}

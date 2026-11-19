@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Lucha Retro</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/menu.css">
+  <link rel="stylesheet" href="css/shop.css">
+</head>
+<body>
+
+  <!-- MODAL DE AUTENTICACIÓN -->
+  <div id="auth-container" class="auth-modal">
+    <div class="menu-card auth-card">
+      <h2 id="auth-title" class="auth-title">Iniciar Sesión</h2>
+      <div id="auth-error" class="status-message auth-error-msg"></div>
+
+      <form id="login-form" class="auth-form">
+        <div class="input-group">
+          <input type="email" id="login-email" class="retro-input" placeholder="Correo electrónico" required>
+        </div>
+        <div class="input-group">
+          <input type="password" id="login-password" class="retro-input" placeholder="Contraseña" required>
+        </div>
+        <button type="submit" class="btn-option btn-action">Entrar</button>
+        <p class="auth-switch-text">
+          ¿No tienes cuenta? <a href="#" id="show-register">Regístrate aquí</a>
+        </p>
+      </form>
+
+      <form id="register-form" class="auth-form hidden-panel">
+        <div class="input-group">
+          <input type="text" id="reg-username" class="retro-input" placeholder="Nombre de usuario" required maxlength="15">
+        </div>
+        <div class="input-group">
+          <input type="email" id="reg-email" class="retro-input" placeholder="Correo electrónico" required>
+        </div>
+        <div class="input-group">
+          <input type="password" id="reg-password" class="retro-input" placeholder="Contraseña" required minlength="6">
+        </div>
+        <button type="submit" class="btn-option btn-action">Crear Cuenta</button>
+        <p class="auth-switch-text">
+          ¿Ya tienes cuenta? <a href="#" id="show-login">Inicia Sesión</a>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <!-- 1. PANTALLA DE INICIO (PORTADA) -->
+  <div id="intro-screen" class="screen">
+    <button class="btn-start" onclick="enterMenu()">¡Iniciar Juego!</button>
+  </div>
+
+  <!-- 2. PANTALLA DE SELECCIÓN DE MODO -->
+  <div id="menu-screen" class="screen">
+    <div class="menu-card">
+      <div class="banner-container">
+        <img src="img/backgrounds/Logo_Menu.png" alt="Logo del Juego" class="game-banner">
+      </div>
+
+      <div class="user-status-bar">
+        <span>👤 <b id="menu-username">-</b></span>
+        <span>🪙 <b id="menu-coins">0</b></span>
+      </div>
+
+      <div class="menu-options">
+        <button class="btn-option" onclick="openFreePlayModal()">1 vs 1 Online</button>
+        <button class="btn-option" onclick="location.href='select_character.html?mode=local'">Partida en una sola pantalla</button>
+        <button class="btn-option" onclick="startVsBot()">1 vs Máquina</button>
+        <button class="btn-option" onclick="openTournamentModal()">Torneo en Red Local</button>
+        <button id="btn-special-event" class="btn-option" onclick="openSpecialEventModal()">Evento Especial</button>
+        <button class="btn-option btn-shop" onclick="openShopModal()">🛒 Tienda y Armería</button>
+        <button id="btn-admin-panel" class="btn-option btn-admin" onclick="location.href='admin.html'">Panel Admin</button>
+        <button id="btn-logout" class="btn-option btn-logout" onclick="logout()">Cerrar Sesión</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE 1v1 ONLINE -->
+  <div id="free-play-modal" class="modal game-modal">
+    <div class="modal-content menu-card">
+      <h2>ARENA DE COMBATE LIBRE</h2>
+
+      <div class="input-group">
+        <label for="username">Tu Nombre:</label>
+        <input type="text" id="username" class="retro-input" placeholder="Ej: DragonSlayer" maxlength="15">
+      </div>
+
+      <div class="input-group">
+        <label for="free-play-char">Tu Personaje:</label>
+        <select id="free-play-char" class="retro-select">
+          <option value="warrior">⚔️ Guerrero (Cuerpo a cuerpo + Rayo)</option>
+          <option value="mage">🔮 Mago (Orbes + Dash veloz)</option>
+          <option value="archer">🏹 Arquero (Flechas + Gran Flecha)</option>
+          <option value="ninja">🥷 Ninja (Shuriken + Estocada x2)</option>
+        </select>
+      </div>
+
+      <div class="menu-buttons">
+        <button id="btn-create-room" class="btn-option btn-action">Crear Sala Privada</button>
+
+        <div class="join-room-box">
+          <input type="text" id="room-code-input" class="retro-input uppercase" placeholder="CÓDIGO DE SALA" maxlength="6">
+          <button id="btn-join-room" class="btn-option btn-action">Unirse a Sala</button>
+        </div>
+      </div>
+
+      <p id="menu-status" class="status-message"></p>
+      <button class="btn-option btn-back" onclick="closeFreePlayModal()">VOLVER</button>
+    </div>
+  </div>
+
+  <!-- MODAL DE CONFIGURACIÓN DE TORNEO -->
+  <div id="tournament-modal" class="modal game-modal">
+    <div class="modal-content menu-card tournament-card">
+      <h2 class="tournament-title">TORNEO ELIMINATORIO</h2>
+
+      <div class="input-group">
+        <label for="tournament-username">Nombre del Jugador</label>
+        <input type="text" id="tournament-username" class="retro-input" placeholder="Ej: GuerreroX" maxlength="15">
+      </div>
+
+      <div class="input-group">
+        <label for="tournament-char">Tu Personaje</label>
+        <select id="tournament-char" class="retro-select">
+          <option value="warrior">⚔️ Guerrero</option>
+          <option value="mage">🔮 Mago</option>
+          <option value="archer">🏹 Arquero</option>
+          <option value="ninja">🥷 Ninja</option>
+        </select>
+      </div>
+
+      <div id="tournament-setup-panel" class="full-width-panel">
+        <div class="tournament-section">
+          <h3>CREAR SALA</h3>
+          <div class="select-wrapper">
+            <select id="tournament-size" class="retro-select">
+              <option value="4">4 Jugadores</option>
+              <option value="8">8 Jugadores</option>
+              <option value="16">16 Jugadores</option>
+            </select>
+          </div>
+          <button id="btn-create-tournament" class="btn-option btn-action">CREAR TORNEO</button>
+        </div>
+
+        <hr class="divider">
+
+        <div class="tournament-section">
+          <h3>UNIRSE A SALA</h3>
+          <input type="text" id="tournament-code-input" class="retro-input uppercase" placeholder="CÓDIGO (EJ: X7K9P)" maxlength="5">
+          <button id="btn-join-tournament" class="btn-option btn-action">UNIRSE</button>
+        </div>
+      </div>
+
+      <div id="tournament-lobby-status" class="lobby-box full-width-panel hidden-panel">
+        <div class="code-container">
+          <span>CÓDIGO DE SALA:</span>
+          <h1 id="t-code-display" class="glow-code">----</h1>
+        </div>
+
+        <p id="t-status-msg" class="status-pulse">Esperando jugadores...</p>
+
+        <div class="players-list-container">
+          <h4>Jugadores Conectados:</h4>
+          <ul id="t-players-list"></ul>
+        </div>
+      </div>
+
+      <button class="btn-option btn-back" onclick="closeTournamentModal()">VOLVER</button>
+    </div>
+  </div>
+
+  <!-- MODAL DE EVENTO ESPECIAL -->
+  <div id="special-event-modal" class="modal game-modal">
+    <div class="modal-content menu-card tournament-card">
+      <h2 class="tournament-title">EVENTO ESPECIAL: ELIMINATORIA</h2>
+
+      <div id="special-event-join-panel" class="full-width-panel">
+        <div class="input-group">
+          <label for="special-event-username">Nombre de Jugador</label>
+          <input type="text" id="special-event-username" class="retro-input" placeholder="Ej: Campeon1" maxlength="15">
+        </div>
+        <div class="input-group">
+          <label for="special-event-char">Tu Personaje</label>
+          <select id="special-event-char" class="retro-select">
+            <option value="warrior">⚔️ Guerrero</option>
+            <option value="mage">🔮 Mago</option>
+            <option value="archer">🏹 Arquero</option>
+            <option value="ninja">🥷 Ninja</option>
+          </select>
+        </div>
+        <button id="btn-join-special-event" type="button" class="btn-option btn-action mt-10" onclick="joinSpecialEventLobby()">INGRESAR A SALA DE ESPERA</button>
+      </div>
+
+      <div id="special-event-lobby-status" class="lobby-box full-width-panel hidden-panel">
+        <p class="status-pulse" id="se-status-msg">ESPERANDO A QUE EL ADMINISTRADOR INICIE EL EVENTO...</p>
+
+        <div class="players-list-container">
+          <h4>Jugadores Esperando (<span id="se-player-count">0</span>):</h4>
+          <ul id="se-players-list"></ul>
+        </div>
+      </div>
+
+      <p id="special-event-status" class="status-message mt-10"></p>
+      <button class="btn-option btn-back mt-10" onclick="closeSpecialEventModal()">VOLVER</button>
+    </div>
+  </div>
+
+  <!-- MODAL DE TIENDA Y ARMERÍA -->
+  <div id="shop-modal" class="modal shop-modal-overlay">
+    <div class="menu-card shop-card">
+      <div class="shop-header">
+        <h2 class="shop-header-title">🛒 TIENDA Y ARMERÍA</h2>
+        <div class="shop-coins-badge">
+          🪙 <b id="shop-coins">0</b>
+        </div>
+      </div>
+
+      <!-- SELECTOR DE PERSONAJE -->
+      <div class="shop-tabs">
+        <button type="button" class="shop-tab-btn" data-char="warrior" onclick="selectShopClass('warrior')">⚔️ Guerrero</button>
+        <button type="button" class="shop-tab-btn" data-char="mage" onclick="selectShopClass('mage')">🔮 Mago</button>
+        <button type="button" class="shop-tab-btn" data-char="archer" onclick="selectShopClass('archer')">🏹 Arquero</button>
+        <button type="button" class="shop-tab-btn" data-char="ninja" onclick="selectShopClass('ninja')">🥷 Ninja</button>
+      </div>
+
+      <!-- CONTENIDO PRINCIPAL: VISTA PREVIA + CATÁLOGO DE ÍTEMS -->
+      <div class="shop-body">
+        <div class="shop-preview-col">
+          <canvas id="shop-preview-canvas" class="shop-preview-canvas" width="160" height="170"></canvas>
+          <div id="shop-stats-list" class="shop-stats-list"></div>
+        </div>
+
+        <div id="shop-items-grid" class="shop-items-grid"></div>
+      </div>
+
+      <p id="shop-feedback" class="status-message shop-feedback-msg"></p>
+      <button type="button" class="btn-option btn-back shop-btn-close" onclick="closeShopModal()">VOLVER AL MENÚ</button>
+    </div>
+  </div>
+
+  <!-- PANTALLA DEL ÁRBOL DE TORNEO (BRACKET) -->
+  <div id="tournament-bracket-screen" class="modal bracket-modal-overlay">
+    <div class="modal-content menu-card bracket-card">
+      <h2 class="tournament-title" id="bracket-title">ÁRBOL DEL TORNEO</h2>
+
+      <div id="match-announcement" class="announcement-box">
+        <span id="next-match-text">PREPARANDO COMBATES SIMULTÁNEOS...</span>
+      </div>
+
+      <div class="bracket-container">
+        <div class="bracket-column" id="winners-bracket">
+          <h3>CUADRO DE COMBATES</h3>
+          <div id="winners-matches"></div>
+        </div>
+      </div>
+
+      <div class="spectator-info">
+        <p>Si tu combate aún no inicia o finalizó, esta pantalla se actualizará automáticamente.</p>
+      </div>
+      <button id="btn-exit-tournament" class="btn-option btn-back mt-15" onclick="exitTournamentToMenu()">VOLVER AL MENÚ</button>
+    </div>
+  </div>
+
+  <!-- PANTALLA DEL JUEGO ONLINE (CANVAS Y UI DE COMBATE) -->
+  <div id="game-screen" class="game-container hidden-screen">
+    <button class="btn-return-menu game-exit-btn" onclick="exitOnlineMatch()" title="Salir del combate">
+      ✖ Salir
+    </button>
+
+    <div class="ui-layer arena-ui-layer">
+      <div>
+        <div class="player-label p1-text" id="p1-name">Jugador 1</div>
+        <div class="health-bar-container"><div id="p1-hp" class="health-bar-fill"></div></div>
+        <div class="mana-bar-container"><div id="p1-mana" class="mana-bar-fill"></div></div>
+      </div>
+      <div class="room-info">
+        <span>Sala: <b id="display-room-code">-</b></span>
+      </div>
+      <div class="p2-hud-col">
+        <div class="player-label p2-text" id="p2-name">Jugador 2</div>
+        <div class="health-bar-container"><div id="p2-hp" class="health-bar-fill"></div></div>
+        <div class="mana-bar-container"><div id="p2-mana" class="mana-bar-fill"></div></div>
+      </div>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+    <!-- CONTROLES TÁCTILES -->
+    <div id="touch-controls">
+      <div class="touch-group left-group">
+        <button id="btn-left" class="touch-btn">◀</button>
+        <button id="btn-right" class="touch-btn">▶</button>
+      </div>
+
+      <div class="touch-group right-group">
+        <button id="btn-jump" class="touch-btn">▲</button>
+        <button id="btn-attack" class="touch-btn action-btn">⚔</button>
+        <button id="btn-special" class="touch-btn special-btn">⚡</button>
+        <button id="btn-defend" class="touch-btn shield-btn">🛡</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SOCKET.IO -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="js/socketInit.js"></script>
+
+  <!-- CLASES MODULARES COMPARTIDAS -->
+  <script src="js/classes/Projectiles.js"></script>
+  <script src="js/classes/Character.js"></script>
+  <script src="js/classes/Warrior.js"></script>
+  <script src="js/classes/Mage.js"></script>
+  <script src="js/classes/Archer.js"></script>
+  <script src="js/classes/Ninja.js"></script>
+  <script src="js/classes/CharacterFactory.js"></script>
+
+  <!-- LÓGICA DE MENÚ, COMBATE ONLINE, AUTENTICACIÓN Y TIENDA -->
+  <script src="js/menu.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/authClient.js"></script>
+  <script src="js/shopClient.js"></script>
+</body>
+</html>
