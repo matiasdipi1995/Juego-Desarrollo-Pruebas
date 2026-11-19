@@ -5,7 +5,7 @@
 
 const ADMIN_API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   ? 'http://localhost:3000'
-  : 'https://juego-en-desarrollo.onrender.com';
+  : 'https://juego-desarrollo-pruebas.onrender.com';
 
 const adminSocket = io(ADMIN_API_BASE, {
   transports: ['websocket', 'polling'],
