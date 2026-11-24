@@ -93,9 +93,49 @@ app.post('/api/login', async (req, res) => {
     }
 
     const user = result.rows[0];
+
+    // 1. Verificar si la cuenta ya está bloqueada
+    if (user.cuenta_bloqueada) {
+      return res.status(423).json({
+        error: 'Cuenta bloqueada por superar los 3 intentos fallidos. Solicitá el desbloqueo al administrador.',
+        locked: true
+      });
+    }
+
+    // 2. Verificar contraseña
     const validPassword = await bcrypt.compare(password, user.password_hash);
     if (!validPassword) {
-      return res.status(401).json({ error: 'Credenciales incorrectas.' });
+      const nuevosIntentos = (user.intentos_fallidos || 0) + 1;
+      const bloquear = nuevosIntentos >= 3;
+
+      await pool.query(
+        `UPDATE usuarios
+         SET intentos_fallidos = $1,
+             cuenta_bloqueada = $2,
+             bloqueado_hasta = CASE WHEN $2 THEN NOW() ELSE NULL END
+         WHERE id = $3`,
+        [nuevosIntentos, bloquear, user.id]
+      );
+
+      if (bloquear) {
+        return res.status(423).json({
+          error: 'Has fallado 3 veces. Tu cuenta ha sido bloqueada por seguridad. Pedí el desbloqueo al administrador.',
+          locked: true
+        });
+      }
+
+      const restantes = 3 - nuevosIntentos;
+      return res.status(401).json({
+        error: `Credenciales incorrectas. Intento fallido ${nuevosIntentos} de 3 (${restantes === 1 ? 'te queda 1 intento' : `te quedan ${restantes} intentos`}).`
+      });
+    }
+
+    // 3. Login correcto: reiniciar contador de intentos fallidos
+    if (user.intentos_fallidos > 0) {
+      await pool.query(
+        'UPDATE usuarios SET intentos_fallidos = 0, cuenta_bloqueada = FALSE, bloqueado_hasta = NULL WHERE id = $1',
+        [user.id]
+      );
     }
 
     const token = jwt.sign(
@@ -123,11 +163,14 @@ app.post('/api/login', async (req, res) => {
 app.get('/api/me', verifyToken, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, username, email, monedas, rol FROM usuarios WHERE id = $1',
+      'SELECT id, username, email, monedas, rol, cuenta_bloqueada FROM usuarios WHERE id = $1',
       [req.user.id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+    if (result.rows[0].cuenta_bloqueada) {
+      return res.status(423).json({ error: 'Tu cuenta se encuentra bloqueada.' });
     }
     res.json({ user: result.rows[0] });
   } catch (err) {

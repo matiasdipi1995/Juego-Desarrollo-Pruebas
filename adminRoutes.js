@@ -1,4 +1,5 @@
 // adminRoutes.js
+const bcrypt = require('bcryptjs');
 const pool = require('./db');
 
 const VALID_CLASSES = ['warrior', 'mage', 'archer', 'ninja'];
@@ -33,7 +34,7 @@ function registerAdminRoutes(app, verifyToken) {
       const [statsRes, itemsRes, usersRes] = await Promise.all([
         pool.query('SELECT * FROM personajes_stats ORDER BY id ASC'),
         pool.query('SELECT * FROM items ORDER BY clase_compatible, id ASC'),
-        pool.query('SELECT id, username, email, monedas, rol, creado_en FROM usuarios ORDER BY id ASC')
+        pool.query('SELECT id, username, email, monedas, rol, intentos_fallidos, cuenta_bloqueada, creado_en FROM usuarios ORDER BY id ASC')
       ]);
 
       res.json({
@@ -172,26 +173,81 @@ function registerAdminRoutes(app, verifyToken) {
     }
   });
 
-  // 6. Actualizar monedas o rol de un usuario
+  // 6. Actualizar monedas, rol, desbloqueo o restablecimiento de contraseña de un usuario
   app.patch('/api/admin/users/:id', verifyToken, verifyAdmin, async (req, res) => {
     const targetUserId = parseInt(req.params.id, 10);
-    const monedas = parseInt(req.body?.monedas, 10);
-    const rol = req.body?.rol;
-
-    if (!targetUserId || !Number.isFinite(monedas) || monedas < 0 || !['jugador', 'admin'].includes(rol)) {
-      return res.status(400).json({ error: 'Datos de usuario inválidos.' });
+    if (!targetUserId) {
+      return res.status(400).json({ error: 'ID de usuario inválido.' });
     }
 
-    if (targetUserId === req.user.id && rol !== 'admin') {
-      return res.status(400).json({ error: 'No puedes quitarte el rol de administrador a ti mismo.' });
-    }
+    const { action } = req.body || {};
 
     try {
+      // Acción A: Desbloquear cuenta y reiniciar contador de intentos
+      if (action === 'unlock') {
+        const result = await pool.query(
+          `UPDATE usuarios
+           SET intentos_fallidos = 0, cuenta_bloqueada = FALSE, bloqueado_hasta = NULL
+           WHERE id = $1
+           RETURNING id, username, email, monedas, rol, intentos_fallidos, cuenta_bloqueada`,
+          [targetUserId]
+        );
+
+        if (result.rows.length === 0) {
+          return res.status(404).json({ error: 'Usuario no encontrado.' });
+        }
+
+        return res.json({
+          message: `Cuenta de ${result.rows[0].username} desbloqueada.`,
+          user: result.rows[0]
+        });
+      }
+
+      // Acción B: Asignar nueva contraseña provisoria (y desbloquear automáticamente)
+      if (action === 'reset_password') {
+        const newPassword = (req.body?.newPassword || '').toString().trim();
+        if (newPassword.length < 6) {
+          return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres.' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(newPassword, salt);
+
+        const result = await pool.query(
+          `UPDATE usuarios
+           SET password_hash = $1, intentos_fallidos = 0, cuenta_bloqueada = FALSE, bloqueado_hasta = NULL
+           WHERE id = $2
+           RETURNING id, username, email, monedas, rol, intentos_fallidos, cuenta_bloqueada`,
+          [passwordHash, targetUserId]
+        );
+
+        if (result.rows.length === 0) {
+          return res.status(404).json({ error: 'Usuario no encontrado.' });
+        }
+
+        return res.json({
+          message: `Contraseña actualizada y cuenta desbloqueada para ${result.rows[0].username}.`,
+          user: result.rows[0]
+        });
+      }
+
+      // Acción C: Actualización estándar de monedas y rol
+      const monedas = parseInt(req.body?.monedas, 10);
+      const rol = req.body?.rol;
+
+      if (!Number.isFinite(monedas) || monedas < 0 || !['jugador', 'admin'].includes(rol)) {
+        return res.status(400).json({ error: 'Datos de usuario inválidos.' });
+      }
+
+      if (targetUserId === req.user.id && rol !== 'admin') {
+        return res.status(400).json({ error: 'No puedes quitarte el rol de administrador a ti mismo.' });
+      }
+
       const result = await pool.query(
         `UPDATE usuarios
          SET monedas = $1, rol = $2
          WHERE id = $3
-         RETURNING id, username, email, monedas, rol`,
+         RETURNING id, username, email, monedas, rol, intentos_fallidos, cuenta_bloqueada`,
         [monedas, rol, targetUserId]
       );
 

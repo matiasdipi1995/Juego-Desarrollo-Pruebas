@@ -320,29 +320,48 @@ window.deleteShopItem = async function(id, name) {
 };
 
 // =============================================================
-// 4. USUARIOS Y MONEDAS
+// 4. USUARIOS, MONEDAS Y DESBLOQUEO DE CUENTAS
 // =============================================================
 function renderUsersTable() {
   const tbody = document.getElementById('admin-users-tbody');
   if (!tbody) return;
 
-  tbody.innerHTML = adminData.users.map(u => `
-    <tr>
-      <td>${u.id}</td>
-      <td><b>${escapeHtml(u.username)}</b></td>
-      <td style="font-size: 12px; color: #bbb;">${escapeHtml(u.email)}</td>
-      <td><input type="number" id="user-coins-${u.id}" value="${u.monedas}" min="0" class="admin-num-input" style="width: 90px;"></td>
-      <td>
-        <select id="user-rol-${u.id}" class="admin-select-input">
-          <option value="jugador" ${u.rol === 'jugador' ? 'selected' : ''}>jugador</option>
-          <option value="admin" ${u.rol === 'admin' ? 'selected' : ''}>admin</option>
-        </select>
-      </td>
-      <td>
-        <button onclick="saveUserAdmin(${u.id})" class="admin-btn-save">Aplicar</button>
-      </td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = adminData.users.map(u => {
+    const intentos = u.intentos_fallidos || 0;
+    let statusBadge = '<div style="font-size: 11px; color: #69f0ae; margin-top: 2px;">✔ Activa</div>';
+    if (u.cuenta_bloqueada) {
+      statusBadge = `<div style="font-size: 11px; color: #ff5252; font-weight: bold; margin-top: 2px;">🔒 Bloqueada (${intentos}/3)</div>`;
+    } else if (intentos > 0) {
+      statusBadge = `<div style="font-size: 11px; color: #ffca28; margin-top: 2px;">⚠️ ${intentos}/3 intentos fallidos</div>`;
+    }
+
+    const unlockBtn = u.cuenta_bloqueada
+      ? `<button onclick="unlockUserAdmin(${u.id}, '${escapeHtml(u.username)}')" class="admin-btn-save" style="background: #ff9800; color: #111;">Desbloquear</button>`
+      : '';
+
+    return `
+      <tr>
+        <td>${u.id}</td>
+        <td>
+          <b>${escapeHtml(u.username)}</b>
+          ${statusBadge}
+        </td>
+        <td style="font-size: 12px; color: #bbb;">${escapeHtml(u.email)}</td>
+        <td><input type="number" id="user-coins-${u.id}" value="${u.monedas}" min="0" class="admin-num-input" style="width: 90px;"></td>
+        <td>
+          <select id="user-rol-${u.id}" class="admin-select-input">
+            <option value="jugador" ${u.rol === 'jugador' ? 'selected' : ''}>jugador</option>
+            <option value="admin" ${u.rol === 'admin' ? 'selected' : ''}>admin</option>
+          </select>
+        </td>
+        <td style="display: flex; gap: 5px; flex-wrap: wrap;">
+          <button onclick="saveUserAdmin(${u.id})" class="admin-btn-save">Aplicar</button>
+          ${unlockBtn}
+          <button onclick="resetUserPasswordAdmin(${u.id}, '${escapeHtml(u.username)}')" class="admin-btn-save" style="background: #29b6f6; color: #111;">Clave</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
 window.saveUserAdmin = async function(userId) {
@@ -364,5 +383,48 @@ window.saveUserAdmin = async function(userId) {
     await loadAdminOverview();
   } catch (err) {
     showAdminBanner('Error de red.', true);
+  }
+};
+
+window.unlockUserAdmin = async function(userId, username) {
+  if (!confirm(`¿Desbloquear la cuenta de "${username}" y reiniciar sus intentos fallidos?`)) return;
+
+  try {
+    const res = await fetch(`${ADMIN_API_BASE}/api/admin/users/${userId}`, {
+      method: 'PATCH',
+      headers: getAdminHeaders(),
+      body: JSON.stringify({ action: 'unlock' })
+    });
+    const data = await res.json();
+    if (!res.ok) return showAdminBanner(data.error || 'Error al desbloquear.', true);
+
+    showAdminBanner(data.message);
+    await loadAdminOverview();
+  } catch (err) {
+    showAdminBanner('Error de red al desbloquear.', true);
+  }
+};
+
+window.resetUserPasswordAdmin = async function(userId, username) {
+  const newPassword = prompt(`Ingresá una nueva contraseña provisoria para "${username}" (mínimo 6 caracteres):`);
+  if (newPassword === null) return;
+
+  if (newPassword.trim().length < 6) {
+    return showAdminBanner('La contraseña debe tener al menos 6 caracteres.', true);
+  }
+
+  try {
+    const res = await fetch(`${ADMIN_API_BASE}/api/admin/users/${userId}`, {
+      method: 'PATCH',
+      headers: getAdminHeaders(),
+      body: JSON.stringify({ action: 'reset_password', newPassword: newPassword.trim() })
+    });
+    const data = await res.json();
+    if (!res.ok) return showAdminBanner(data.error || 'Error al cambiar contraseña.', true);
+
+    showAdminBanner(data.message);
+    await loadAdminOverview();
+  } catch (err) {
+    showAdminBanner('Error de red al restablecer contraseña.', true);
   }
 };
